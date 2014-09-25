@@ -1,0 +1,414 @@
+   1               		.file	"nrk_eeprom.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__RAMPZ__ = 0x3b
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  10               		.text
+  11               	.Ltext0:
+ 275               	.global	nrk_eeprom_read_byte
+ 277               	nrk_eeprom_read_byte:
+ 278               		.stabd	46,0,0
+   1:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** #include <nrk_eeprom.h>
+   2:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** #include <avr/eeprom.h>
+   3:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** #include <nrk_error.h>
+   4:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+   5:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** uint8_t nrk_eeprom_read_byte( uint16_t addr )
+   6:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 280               	.LM0:
+ 281               	.LFBB1:
+ 282               	/* prologue: function */
+ 283               	/* frame size = 0 */
+ 284               	/* stack size = 0 */
+ 285               	.L__stack_usage = 0
+   7:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** uint8_t v;
+   8:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** v=eeprom_read_byte((uint8_t*)addr);
+ 287               	.LM1:
+ 288 0000 0C94 0000 		jmp __eerd_byte_m128rfa1
+ 290               	.Lscope1:
+ 292               		.stabd	78,0,0
+ 296               	.global	nrk_eeprom_write_byte
+ 298               	nrk_eeprom_write_byte:
+ 299               		.stabd	46,0,0
+   9:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** return v;
+  10:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+  11:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  12:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** int8_t nrk_eeprom_write_byte( uint16_t addr, uint8_t value )
+  13:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 301               	.LM2:
+ 302               	.LFBB2:
+ 303               	/* prologue: function */
+ 304               	/* frame size = 0 */
+ 305               	/* stack size = 0 */
+ 306               	.L__stack_usage = 0
+  14:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** eeprom_write_byte( (uint8_t*)addr, value );
+ 308               	.LM3:
+ 309 0004 0E94 0000 		call __eewr_byte_m128rfa1
+  15:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+ 311               	.LM4:
+ 312 0008 0895      		ret
+ 314               	.Lscope2:
+ 316               		.stabd	78,0,0
+ 319               	.global	read_eeprom_mac_address
+ 321               	read_eeprom_mac_address:
+ 322               		.stabd	46,0,0
+  16:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  17:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** int8_t read_eeprom_mac_address(uint32_t *mac_addr)
+  18:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 324               	.LM5:
+ 325               	.LFBB3:
+ 326 000a EF92      		push r14
+ 327 000c FF92      		push r15
+ 328 000e 0F93      		push r16
+ 329 0010 1F93      		push r17
+ 330 0012 CF93      		push r28
+ 331 0014 DF93      		push r29
+ 332               	/* prologue: function */
+ 333               	/* frame size = 0 */
+ 334               	/* stack size = 6 */
+ 335               	.L__stack_usage = 6
+ 336 0016 EC01      		movw r28,r24
+  19:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** uint8_t checksum,ct;
+  20:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** uint8_t *buf;
+  21:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** buf=(uint8_t *)mac_addr;
+  22:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** checksum=buf[0]+buf[1]+buf[2]+buf[3];
+  23:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** buf[3]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_0);
+ 338               	.LM6:
+ 339 0018 80E0      		ldi r24,0
+ 340 001a 90E0      		ldi r25,0
+ 341 001c 0E94 0000 		call __eerd_byte_m128rfa1
+ 342 0020 F82E      		mov r15,r24
+ 343 0022 8B83      		std Y+3,r24
+  24:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** buf[2]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_1);
+ 345               	.LM7:
+ 346 0024 81E0      		ldi r24,lo8(1)
+ 347 0026 90E0      		ldi r25,0
+ 348 0028 0E94 0000 		call __eerd_byte_m128rfa1
+ 349 002c E82E      		mov r14,r24
+ 350 002e 8A83      		std Y+2,r24
+  25:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** buf[1]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_2);
+ 352               	.LM8:
+ 353 0030 82E0      		ldi r24,lo8(2)
+ 354 0032 90E0      		ldi r25,0
+ 355 0034 0E94 0000 		call __eerd_byte_m128rfa1
+ 356 0038 082F      		mov r16,r24
+ 357 003a 8983      		std Y+1,r24
+  26:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** buf[0]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_3);
+ 359               	.LM9:
+ 360 003c 83E0      		ldi r24,lo8(3)
+ 361 003e 90E0      		ldi r25,0
+ 362 0040 0E94 0000 		call __eerd_byte_m128rfa1
+ 363 0044 182F      		mov r17,r24
+ 364 0046 8883      		st Y,r24
+  27:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** checksum=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_CHKSUM);
+ 366               	.LM10:
+ 367 0048 84E0      		ldi r24,lo8(4)
+ 368 004a 90E0      		ldi r25,0
+ 369 004c 0E94 0000 		call __eerd_byte_m128rfa1
+  28:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** ct=buf[0];
+  29:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** ct+=buf[1];
+ 371               	.LM11:
+ 372 0050 9E2D      		mov r25,r14
+ 373 0052 9F0D      		add r25,r15
+  30:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** ct+=buf[2];
+ 375               	.LM12:
+ 376 0054 900F      		add r25,r16
+  31:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** ct+=buf[3];
+ 378               	.LM13:
+ 379 0056 910F      		add r25,r17
+  32:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** if(checksum==ct) return NRK_OK;
+ 381               	.LM14:
+ 382 0058 8913      		cpse r24,r25
+ 383 005a 00C0      		rjmp .L5
+ 384 005c 81E0      		ldi r24,lo8(1)
+ 385 005e 00C0      		rjmp .L4
+ 386               	.L5:
+  33:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  34:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** return NRK_ERROR;
+ 388               	.LM15:
+ 389 0060 8FEF      		ldi r24,lo8(-1)
+ 390               	.L4:
+ 391               	/* epilogue start */
+  35:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+ 393               	.LM16:
+ 394 0062 DF91      		pop r29
+ 395 0064 CF91      		pop r28
+ 396 0066 1F91      		pop r17
+ 397 0068 0F91      		pop r16
+ 398 006a FF90      		pop r15
+ 399 006c EF90      		pop r14
+ 400 006e 0895      		ret
+ 402               	.Lscope3:
+ 404               		.stabd	78,0,0
+ 407               	.global	read_eeprom_channel
+ 409               	read_eeprom_channel:
+ 410               		.stabd	46,0,0
+  36:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  37:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** int8_t read_eeprom_channel(uint8_t *channel)
+  38:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 412               	.LM17:
+ 413               	.LFBB4:
+ 414 0070 CF93      		push r28
+ 415 0072 DF93      		push r29
+ 416               	/* prologue: function */
+ 417               	/* frame size = 0 */
+ 418               	/* stack size = 2 */
+ 419               	.L__stack_usage = 2
+ 420 0074 EC01      		movw r28,r24
+  39:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   *channel=eeprom_read_byte ((uint8_t*)EE_CHANNEL);
+ 422               	.LM18:
+ 423 0076 85E0      		ldi r24,lo8(5)
+ 424 0078 90E0      		ldi r25,0
+ 425 007a 0E94 0000 		call __eerd_byte_m128rfa1
+ 426 007e 8883      		st Y,r24
+  40:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** return NRK_OK;
+  41:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+ 428               	.LM19:
+ 429 0080 81E0      		ldi r24,lo8(1)
+ 430               	/* epilogue start */
+ 431 0082 DF91      		pop r29
+ 432 0084 CF91      		pop r28
+ 433 0086 0895      		ret
+ 435               	.Lscope4:
+ 437               		.stabd	78,0,0
+ 440               	.global	write_eeprom_load_img_pages
+ 442               	write_eeprom_load_img_pages:
+ 443               		.stabd	46,0,0
+  42:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  43:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** int8_t write_eeprom_load_img_pages(uint8_t *load_pages)
+  44:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 445               	.LM20:
+ 446               	.LFBB5:
+ 447               	/* prologue: function */
+ 448               	/* frame size = 0 */
+ 449               	/* stack size = 0 */
+ 450               	.L__stack_usage = 0
+  45:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   eeprom_write_byte ((uint8_t*)EE_LOAD_IMG_PAGES, *load_pages);
+ 452               	.LM21:
+ 453 0088 FC01      		movw r30,r24
+ 454 008a 6081      		ld r22,Z
+ 455 008c 86E0      		ldi r24,lo8(6)
+ 456 008e 90E0      		ldi r25,0
+ 457 0090 0E94 0000 		call __eewr_byte_m128rfa1
+  46:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   return NRK_OK;
+  47:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+ 459               	.LM22:
+ 460 0094 81E0      		ldi r24,lo8(1)
+ 461 0096 0895      		ret
+ 463               	.Lscope5:
+ 465               		.stabd	78,0,0
+ 468               	.global	read_eeprom_load_img_pages
+ 470               	read_eeprom_load_img_pages:
+ 471               		.stabd	46,0,0
+  48:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  49:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** int8_t read_eeprom_load_img_pages(uint8_t *load_pages)
+  50:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 473               	.LM23:
+ 474               	.LFBB6:
+ 475 0098 CF93      		push r28
+ 476 009a DF93      		push r29
+ 477               	/* prologue: function */
+ 478               	/* frame size = 0 */
+ 479               	/* stack size = 2 */
+ 480               	.L__stack_usage = 2
+ 481 009c EC01      		movw r28,r24
+  51:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   *load_pages=eeprom_read_byte ((uint8_t*)EE_LOAD_IMG_PAGES);
+ 483               	.LM24:
+ 484 009e 86E0      		ldi r24,lo8(6)
+ 485 00a0 90E0      		ldi r25,0
+ 486 00a2 0E94 0000 		call __eerd_byte_m128rfa1
+ 487 00a6 8883      		st Y,r24
+  52:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   return NRK_OK;
+  53:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+ 489               	.LM25:
+ 490 00a8 81E0      		ldi r24,lo8(1)
+ 491               	/* epilogue start */
+ 492 00aa DF91      		pop r29
+ 493 00ac CF91      		pop r28
+ 494 00ae 0895      		ret
+ 496               	.Lscope6:
+ 498               		.stabd	78,0,0
+ 500               	.global	read_eeprom_aes_key
+ 502               	read_eeprom_aes_key:
+ 503               		.stabd	46,0,0
+  54:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  55:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** int8_t read_eeprom_aes_key(uint8_t *aes_key)
+  56:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 505               	.LM26:
+ 506               	.LFBB7:
+ 507 00b0 0F93      		push r16
+ 508 00b2 1F93      		push r17
+ 509 00b4 CF93      		push r28
+ 510 00b6 DF93      		push r29
+ 511               	/* prologue: function */
+ 512               	/* frame size = 0 */
+ 513               	/* stack size = 4 */
+ 514               	.L__stack_usage = 4
+ 515 00b8 EC01      		movw r28,r24
+ 517               	.LM27:
+ 518 00ba 08E0      		ldi r16,lo8(8)
+ 519 00bc 10E0      		ldi r17,0
+ 520               	.L10:
+  57:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** uint8_t i;
+  58:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+  59:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   aes_key[i]=eeprom_read_byte ((uint8_t*)(EE_AES_KEY+i));
+ 522               	.LM28:
+ 523 00be C801      		movw r24,r16
+ 524 00c0 0E94 0000 		call __eerd_byte_m128rfa1
+ 525 00c4 8993      		st Y+,r24
+ 526 00c6 0F5F      		subi r16,-1
+ 527 00c8 1F4F      		sbci r17,-1
+  58:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+ 529               	.LM29:
+ 530 00ca 0831      		cpi r16,24
+ 531 00cc 1105      		cpc r17,__zero_reg__
+ 532 00ce 01F4      		brne .L10
+  60:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   return NRK_OK;
+  61:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+ 534               	.LM30:
+ 535 00d0 81E0      		ldi r24,lo8(1)
+ 536               	/* epilogue start */
+ 537 00d2 DF91      		pop r29
+ 538 00d4 CF91      		pop r28
+ 539 00d6 1F91      		pop r17
+ 540 00d8 0F91      		pop r16
+ 541 00da 0895      		ret
+ 543               	.Lscope7:
+ 545               		.stabd	78,0,0
+ 547               	.global	write_eeprom_aes_key
+ 549               	write_eeprom_aes_key:
+ 550               		.stabd	46,0,0
+  62:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  63:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** int8_t write_eeprom_aes_key(uint8_t *aes_key)
+  64:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 552               	.LM31:
+ 553               	.LFBB8:
+ 554 00dc 0F93      		push r16
+ 555 00de 1F93      		push r17
+ 556 00e0 CF93      		push r28
+ 557 00e2 DF93      		push r29
+ 558               	/* prologue: function */
+ 559               	/* frame size = 0 */
+ 560               	/* stack size = 4 */
+ 561               	.L__stack_usage = 4
+ 562 00e4 EC01      		movw r28,r24
+ 564               	.LM32:
+ 565 00e6 08E0      		ldi r16,lo8(8)
+ 566 00e8 10E0      		ldi r17,0
+ 567               	.L13:
+  65:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** uint8_t i;
+  66:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+  67:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   eeprom_write_byte ((uint8_t*)(EE_AES_KEY+i),aes_key[i]);
+ 569               	.LM33:
+ 570 00ea 6991      		ld r22,Y+
+ 571 00ec C801      		movw r24,r16
+ 572 00ee 0E94 0000 		call __eewr_byte_m128rfa1
+ 573 00f2 0F5F      		subi r16,-1
+ 574 00f4 1F4F      		sbci r17,-1
+  66:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+ 576               	.LM34:
+ 577 00f6 0831      		cpi r16,24
+ 578 00f8 1105      		cpc r17,__zero_reg__
+ 579 00fa 01F4      		brne .L13
+  68:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   return NRK_OK;
+  69:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+ 581               	.LM35:
+ 582 00fc 81E0      		ldi r24,lo8(1)
+ 583               	/* epilogue start */
+ 584 00fe DF91      		pop r29
+ 585 0100 CF91      		pop r28
+ 586 0102 1F91      		pop r17
+ 587 0104 0F91      		pop r16
+ 588 0106 0895      		ret
+ 590               	.Lscope8:
+ 592               		.stabd	78,0,0
+ 595               	.global	read_eeprom_current_image_checksum
+ 597               	read_eeprom_current_image_checksum:
+ 598               		.stabd	46,0,0
+  70:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  71:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** int8_t read_eeprom_current_image_checksum(uint8_t *image_checksum)
+  72:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 600               	.LM36:
+ 601               	.LFBB9:
+ 602 0108 CF93      		push r28
+ 603 010a DF93      		push r29
+ 604               	/* prologue: function */
+ 605               	/* frame size = 0 */
+ 606               	/* stack size = 2 */
+ 607               	.L__stack_usage = 2
+ 608 010c EC01      		movw r28,r24
+  73:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   *image_checksum=eeprom_read_byte ((uint8_t*)EE_CURRENT_IMAGE_CHECKSUM);
+ 610               	.LM37:
+ 611 010e 87E0      		ldi r24,lo8(7)
+ 612 0110 90E0      		ldi r25,0
+ 613 0112 0E94 0000 		call __eerd_byte_m128rfa1
+ 614 0116 8883      		st Y,r24
+  74:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   return NRK_OK;
+  75:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+ 616               	.LM38:
+ 617 0118 81E0      		ldi r24,lo8(1)
+ 618               	/* epilogue start */
+ 619 011a DF91      		pop r29
+ 620 011c CF91      		pop r28
+ 621 011e 0895      		ret
+ 623               	.Lscope9:
+ 625               		.stabd	78,0,0
+ 628               	.global	write_eeprom_current_image_checksum
+ 630               	write_eeprom_current_image_checksum:
+ 631               		.stabd	46,0,0
+  76:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** 
+  77:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** int8_t write_eeprom_current_image_checksum(uint8_t *image_checksum)
+  78:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** {
+ 633               	.LM39:
+ 634               	.LFBB10:
+ 635               	/* prologue: function */
+ 636               	/* frame size = 0 */
+ 637               	/* stack size = 0 */
+ 638               	.L__stack_usage = 0
+  79:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   eeprom_write_byte ((uint8_t*)EE_CURRENT_IMAGE_CHECKSUM, *image_checksum);
+ 640               	.LM40:
+ 641 0120 FC01      		movw r30,r24
+ 642 0122 6081      		ld r22,Z
+ 643 0124 87E0      		ldi r24,lo8(7)
+ 644 0126 90E0      		ldi r25,0
+ 645 0128 0E94 0000 		call __eewr_byte_m128rfa1
+  80:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c ****   return NRK_OK;
+  81:../../../../../src/platform/firefly3_usb/source/nrk_eeprom.c **** }
+ 647               	.LM41:
+ 648 012c 81E0      		ldi r24,lo8(1)
+ 649 012e 0895      		ret
+ 651               	.Lscope10:
+ 653               		.stabd	78,0,0
+ 654               		.comm	error_num,1,1
+ 655               		.comm	error_task,1,1
+ 656               		.comm	_nrk_signal_list,4,1
+ 661               	.Letext0:
+ 662               		.ident	"GCC: (Fedora 4.7.2-1.fc17) 4.7.2"
+ 663               	.global __do_clear_bss
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 nrk_eeprom.c
+     /tmp/cc3LqQxu.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/cc3LqQxu.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/cc3LqQxu.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/cc3LqQxu.s:5      *ABS*:000000000000003b __RAMPZ__
+     /tmp/cc3LqQxu.s:6      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/cc3LqQxu.s:7      *ABS*:0000000000000001 __zero_reg__
+     /tmp/cc3LqQxu.s:277    .text:0000000000000000 nrk_eeprom_read_byte
+     /tmp/cc3LqQxu.s:298    .text:0000000000000004 nrk_eeprom_write_byte
+     /tmp/cc3LqQxu.s:321    .text:000000000000000a read_eeprom_mac_address
+     /tmp/cc3LqQxu.s:409    .text:0000000000000070 read_eeprom_channel
+     /tmp/cc3LqQxu.s:442    .text:0000000000000088 write_eeprom_load_img_pages
+     /tmp/cc3LqQxu.s:470    .text:0000000000000098 read_eeprom_load_img_pages
+     /tmp/cc3LqQxu.s:502    .text:00000000000000b0 read_eeprom_aes_key
+     /tmp/cc3LqQxu.s:549    .text:00000000000000dc write_eeprom_aes_key
+     /tmp/cc3LqQxu.s:597    .text:0000000000000108 read_eeprom_current_image_checksum
+     /tmp/cc3LqQxu.s:630    .text:0000000000000120 write_eeprom_current_image_checksum
+                            *COM*:0000000000000001 error_num
+                            *COM*:0000000000000001 error_task
+                            *COM*:0000000000000004 _nrk_signal_list
+
+UNDEFINED SYMBOLS
+__eerd_byte_m128rfa1
+__eewr_byte_m128rfa1
+__do_clear_bss

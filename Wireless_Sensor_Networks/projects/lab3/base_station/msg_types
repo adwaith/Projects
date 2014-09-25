@@ -1,0 +1,22 @@
+Directed msg: 
+ACK - discover ack
+<dest mac>:<sender mac>:AD // discover ack
+
+Discover 
+0:<Sender MAC>:DM
+
+Data msg peer to node
+<Dest MAC>:<Sender MAC>:DM:<origin mac>:<data seq num>:<Sample value> // data message
+
+Ack for update rate 
+<Dest MAC>:<Sender MAC>:UA:<origin mac> // update ack
+
+Ack for sampling 
+<Dest MAC>:<Sender MAC>:SA:<origin mac> // sampling ack
+
+Flood - 
+data ack - BS to peer
+neighbour list - peer to BS 
+routing table - BS to peer 
+update rate 
+sampling rate 

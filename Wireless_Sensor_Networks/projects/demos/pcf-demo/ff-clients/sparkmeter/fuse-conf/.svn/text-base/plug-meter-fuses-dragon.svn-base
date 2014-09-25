@@ -1,0 +1,8 @@
+avrdude -F -p atmega128rfa1 -P usb -c dragon_isp -V -U lfuse:w:0xE6:m -v
+echo "Sleeping 5 seconds"
+sleep 5
+avrdude -F -p atmega128rfa1 -P usb -c dragon_isp -V -U hfuse:w:0xD2:m -v
+echo "Sleeping 5 seconds"
+sleep 5
+avrdude -F -p atmega128rfa1 -P usb -c dragon_isp -V -U efuse:w:0xFC:m -v
+echo "Setup for Power Plug Meter. EEPROM will clear on flashing"

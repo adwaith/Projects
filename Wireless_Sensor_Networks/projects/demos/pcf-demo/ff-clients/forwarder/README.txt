@@ -1,0 +1,1 @@
+This is a simple program that can provide simple multi-hop by stretching each TDMA slot.  The first part of each slot is used to mirror packets delaying their arrival until the later section of each slot.  For this reason, slots should be integer multiples of the min slot size for this to work well (at least 4ms+)

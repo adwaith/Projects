@@ -1,0 +1,427 @@
+   1               		.file	"nrk_eeprom.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  10               		.text
+  11               	.Ltext0:
+ 127               	.global	nrk_eeprom_read_byte
+ 129               	nrk_eeprom_read_byte:
+ 130               		.stabd	46,0,0
+   1:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** #include <nrk_eeprom.h>
+   2:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** #include <avr/eeprom.h>
+   3:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** #include <nrk_error.h>
+   4:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+   5:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t nrk_eeprom_read_byte( uint16_t addr )
+   6:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 132               	.LM0:
+ 133               	.LFBB1:
+ 134               	/* prologue: function */
+ 135               	/* frame size = 0 */
+ 136               	/* stack size = 0 */
+ 137               	.L__stack_usage = 0
+   7:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t v;
+   8:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** v=eeprom_read_byte((uint8_t*)addr);
+ 139               	.LM1:
+ 140 0000 0E94 0000 		call __eerd_byte_m1281
+ 141               	/* epilogue start */
+   9:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** return v;
+  10:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 143               	.LM2:
+ 144 0004 0895      		ret
+ 146               	.Lscope1:
+ 148               		.stabd	78,0,0
+ 152               	.global	nrk_eeprom_write_byte
+ 154               	nrk_eeprom_write_byte:
+ 155               		.stabd	46,0,0
+  11:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  12:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t nrk_eeprom_write_byte( uint16_t addr, uint8_t value )
+  13:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 157               	.LM3:
+ 158               	.LFBB2:
+ 159               	/* prologue: function */
+ 160               	/* frame size = 0 */
+ 161               	/* stack size = 0 */
+ 162               	.L__stack_usage = 0
+  14:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** eeprom_write_byte( (uint8_t*)addr, value );
+ 164               	.LM4:
+ 165 0006 0E94 0000 		call __eewr_byte_m1281
+ 166               	/* epilogue start */
+  15:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 168               	.LM5:
+ 169 000a 0895      		ret
+ 171               	.Lscope2:
+ 173               		.stabd	78,0,0
+ 175               	.global	read_eeprom_mac_address
+ 177               	read_eeprom_mac_address:
+ 178               		.stabd	46,0,0
+  16:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  17:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_mac_address(uint32_t *mac_addr)
+  18:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 180               	.LM6:
+ 181               	.LFBB3:
+ 182 000c EF92      		push r14
+ 183 000e FF92      		push r15
+ 184 0010 0F93      		push r16
+ 185 0012 1F93      		push r17
+ 186 0014 CF93      		push r28
+ 187 0016 DF93      		push r29
+ 188               	/* prologue: function */
+ 189               	/* frame size = 0 */
+ 190               	/* stack size = 6 */
+ 191               	.L__stack_usage = 6
+  19:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t checksum,ct;
+  20:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t *buf;
+  21:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf=(uint8_t *)mac_addr;
+ 193               	.LM7:
+ 194 0018 E82E      		mov r14,r24
+ 195 001a E701      		movw r28,r14
+ 196 001c 7E01      		movw r14,r28
+ 197 001e F92E      		mov r15,r25
+ 198 0020 E701      		movw r28,r14
+  22:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** checksum=buf[0]+buf[1]+buf[2]+buf[3];
+  23:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf[3]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_0);
+ 200               	.LM8:
+ 201 0022 80E0      		ldi r24,lo8(0)
+ 202 0024 90E0      		ldi r25,hi8(0)
+ 203 0026 0E94 0000 		call __eerd_byte_m1281
+ 204 002a 082F      		mov r16,r24
+ 205 002c 8B83      		std Y+3,r24
+  24:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf[2]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_1);
+ 207               	.LM9:
+ 208 002e 81E0      		ldi r24,lo8(1)
+ 209 0030 90E0      		ldi r25,hi8(1)
+ 210 0032 0E94 0000 		call __eerd_byte_m1281
+ 211 0036 E82E      		mov r14,r24
+ 212 0038 8A83      		std Y+2,r24
+  25:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf[1]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_2);
+ 214               	.LM10:
+ 215 003a 82E0      		ldi r24,lo8(2)
+ 216 003c 90E0      		ldi r25,hi8(2)
+ 217 003e 0E94 0000 		call __eerd_byte_m1281
+ 218 0042 F82E      		mov r15,r24
+ 219 0044 8983      		std Y+1,r24
+  26:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf[0]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_3);
+ 221               	.LM11:
+ 222 0046 83E0      		ldi r24,lo8(3)
+ 223 0048 90E0      		ldi r25,hi8(3)
+ 224 004a 0E94 0000 		call __eerd_byte_m1281
+ 225 004e 182F      		mov r17,r24
+ 226 0050 8883      		st Y,r24
+  27:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** checksum=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_CHKSUM);
+ 228               	.LM12:
+ 229 0052 84E0      		ldi r24,lo8(4)
+ 230 0054 90E0      		ldi r25,hi8(4)
+ 231 0056 0E94 0000 		call __eerd_byte_m1281
+  28:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** ct=buf[0];
+  29:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** ct+=buf[1];
+ 233               	.LM13:
+ 234 005a FE0C      		add r15,r14
+  30:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** ct+=buf[2];
+ 236               	.LM14:
+ 237 005c F00E      		add r15,r16
+  31:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** ct+=buf[3];
+ 239               	.LM15:
+ 240 005e F10E      		add r15,r17
+  32:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** if(checksum==ct) return NRK_OK;
+ 242               	.LM16:
+ 243 0060 8F15      		cp r24,r15
+ 244 0062 01F4      		brne .L5
+ 245 0064 81E0      		ldi r24,lo8(1)
+ 246 0066 00C0      		rjmp .L4
+ 247               	.L5:
+  33:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  34:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** return NRK_ERROR;
+ 249               	.LM17:
+ 250 0068 8FEF      		ldi r24,lo8(-1)
+ 251               	.L4:
+ 252               	/* epilogue start */
+  35:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 254               	.LM18:
+ 255 006a DF91      		pop r29
+ 256 006c CF91      		pop r28
+ 257 006e 1F91      		pop r17
+ 258 0070 0F91      		pop r16
+ 259 0072 FF90      		pop r15
+ 260 0074 EF90      		pop r14
+ 261 0076 0895      		ret
+ 263               	.Lscope3:
+ 265               		.stabd	78,0,0
+ 268               	.global	read_eeprom_channel
+ 270               	read_eeprom_channel:
+ 271               		.stabd	46,0,0
+  36:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  37:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_channel(uint8_t *channel)
+  38:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 273               	.LM19:
+ 274               	.LFBB4:
+ 275 0078 CF93      		push r28
+ 276 007a DF93      		push r29
+ 277               	/* prologue: function */
+ 278               	/* frame size = 0 */
+ 279               	/* stack size = 2 */
+ 280               	.L__stack_usage = 2
+ 281 007c EC01      		movw r28,r24
+  39:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   *channel=eeprom_read_byte ((uint8_t*)EE_CHANNEL);
+ 283               	.LM20:
+ 284 007e 85E0      		ldi r24,lo8(5)
+ 285 0080 90E0      		ldi r25,hi8(5)
+ 286 0082 0E94 0000 		call __eerd_byte_m1281
+ 287 0086 8883      		st Y,r24
+  40:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** return NRK_OK;
+  41:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 289               	.LM21:
+ 290 0088 81E0      		ldi r24,lo8(1)
+ 291               	/* epilogue start */
+ 292 008a DF91      		pop r29
+ 293 008c CF91      		pop r28
+ 294 008e 0895      		ret
+ 296               	.Lscope4:
+ 298               		.stabd	78,0,0
+ 301               	.global	write_eeprom_load_img_pages
+ 303               	write_eeprom_load_img_pages:
+ 304               		.stabd	46,0,0
+  42:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  43:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t write_eeprom_load_img_pages(uint8_t *load_pages)
+  44:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 306               	.LM22:
+ 307               	.LFBB5:
+ 308               	/* prologue: function */
+ 309               	/* frame size = 0 */
+ 310               	/* stack size = 0 */
+ 311               	.L__stack_usage = 0
+ 312 0090 FC01      		movw r30,r24
+  45:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   eeprom_write_byte ((uint8_t*)EE_LOAD_IMG_PAGES, *load_pages);
+ 314               	.LM23:
+ 315 0092 86E0      		ldi r24,lo8(6)
+ 316 0094 90E0      		ldi r25,hi8(6)
+ 317 0096 6081      		ld r22,Z
+ 318 0098 0E94 0000 		call __eewr_byte_m1281
+  46:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  47:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 320               	.LM24:
+ 321 009c 81E0      		ldi r24,lo8(1)
+ 322               	/* epilogue start */
+ 323 009e 0895      		ret
+ 325               	.Lscope5:
+ 327               		.stabd	78,0,0
+ 330               	.global	read_eeprom_load_img_pages
+ 332               	read_eeprom_load_img_pages:
+ 333               		.stabd	46,0,0
+  48:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  49:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_load_img_pages(uint8_t *load_pages)
+  50:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 335               	.LM25:
+ 336               	.LFBB6:
+ 337 00a0 CF93      		push r28
+ 338 00a2 DF93      		push r29
+ 339               	/* prologue: function */
+ 340               	/* frame size = 0 */
+ 341               	/* stack size = 2 */
+ 342               	.L__stack_usage = 2
+ 343 00a4 EC01      		movw r28,r24
+  51:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   *load_pages=eeprom_read_byte ((uint8_t*)EE_LOAD_IMG_PAGES);
+ 345               	.LM26:
+ 346 00a6 86E0      		ldi r24,lo8(6)
+ 347 00a8 90E0      		ldi r25,hi8(6)
+ 348 00aa 0E94 0000 		call __eerd_byte_m1281
+ 349 00ae 8883      		st Y,r24
+  52:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  53:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 351               	.LM27:
+ 352 00b0 81E0      		ldi r24,lo8(1)
+ 353               	/* epilogue start */
+ 354 00b2 DF91      		pop r29
+ 355 00b4 CF91      		pop r28
+ 356 00b6 0895      		ret
+ 358               	.Lscope6:
+ 360               		.stabd	78,0,0
+ 362               	.global	read_eeprom_aes_key
+ 364               	read_eeprom_aes_key:
+ 365               		.stabd	46,0,0
+  54:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  55:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_aes_key(uint8_t *aes_key)
+  56:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 367               	.LM28:
+ 368               	.LFBB7:
+ 369 00b8 0F93      		push r16
+ 370 00ba 1F93      		push r17
+ 371 00bc CF93      		push r28
+ 372 00be DF93      		push r29
+ 373               	/* prologue: function */
+ 374               	/* frame size = 0 */
+ 375               	/* stack size = 4 */
+ 376               	.L__stack_usage = 4
+ 378               	.LM29:
+ 379 00c0 082F      		mov r16,r24
+ 380 00c2 192F      		mov r17,r25
+ 381 00c4 C8E0      		ldi r28,lo8(8)
+ 382 00c6 D0E0      		ldi r29,hi8(8)
+ 383               	.L10:
+  57:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t i;
+  58:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+  59:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   aes_key[i]=eeprom_read_byte ((uint8_t*)(EE_AES_KEY+i));
+ 385               	.LM30:
+ 386 00c8 CE01      		movw r24,r28
+ 387 00ca 0E94 0000 		call __eerd_byte_m1281
+ 388 00ce F801      		movw r30,r16
+ 389 00d0 8193      		st Z+,r24
+ 390 00d2 8F01      		movw r16,r30
+ 391 00d4 2196      		adiw r28,1
+  58:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+ 393               	.LM31:
+ 394 00d6 C831      		cpi r28,24
+ 395 00d8 D105      		cpc r29,__zero_reg__
+ 396 00da 01F4      		brne .L10
+  60:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  61:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 398               	.LM32:
+ 399 00dc 81E0      		ldi r24,lo8(1)
+ 400               	/* epilogue start */
+ 401 00de DF91      		pop r29
+ 402 00e0 CF91      		pop r28
+ 403 00e2 1F91      		pop r17
+ 404 00e4 0F91      		pop r16
+ 405 00e6 0895      		ret
+ 407               	.Lscope7:
+ 409               		.stabd	78,0,0
+ 411               	.global	write_eeprom_aes_key
+ 413               	write_eeprom_aes_key:
+ 414               		.stabd	46,0,0
+  62:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  63:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t write_eeprom_aes_key(uint8_t *aes_key)
+  64:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 416               	.LM33:
+ 417               	.LFBB8:
+ 418 00e8 0F93      		push r16
+ 419 00ea 1F93      		push r17
+ 420 00ec CF93      		push r28
+ 421 00ee DF93      		push r29
+ 422               	/* prologue: function */
+ 423               	/* frame size = 0 */
+ 424               	/* stack size = 4 */
+ 425               	.L__stack_usage = 4
+ 427               	.LM34:
+ 428 00f0 082F      		mov r16,r24
+ 429 00f2 192F      		mov r17,r25
+ 430 00f4 C8E0      		ldi r28,lo8(8)
+ 431 00f6 D0E0      		ldi r29,hi8(8)
+ 432               	.L13:
+  65:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t i;
+  66:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+  67:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   eeprom_write_byte ((uint8_t*)(EE_AES_KEY+i),aes_key[i]);
+ 434               	.LM35:
+ 435 00f8 F801      		movw r30,r16
+ 436 00fa 6191      		ld r22,Z+
+ 437 00fc 8F01      		movw r16,r30
+ 438 00fe CE01      		movw r24,r28
+ 439 0100 0E94 0000 		call __eewr_byte_m1281
+ 440 0104 2196      		adiw r28,1
+  66:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+ 442               	.LM36:
+ 443 0106 C831      		cpi r28,24
+ 444 0108 D105      		cpc r29,__zero_reg__
+ 445 010a 01F4      		brne .L13
+  68:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  69:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 447               	.LM37:
+ 448 010c 81E0      		ldi r24,lo8(1)
+ 449               	/* epilogue start */
+ 450 010e DF91      		pop r29
+ 451 0110 CF91      		pop r28
+ 452 0112 1F91      		pop r17
+ 453 0114 0F91      		pop r16
+ 454 0116 0895      		ret
+ 456               	.Lscope8:
+ 458               		.stabd	78,0,0
+ 461               	.global	read_eeprom_current_image_checksum
+ 463               	read_eeprom_current_image_checksum:
+ 464               		.stabd	46,0,0
+  70:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  71:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_current_image_checksum(uint8_t *image_checksum)
+  72:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 466               	.LM38:
+ 467               	.LFBB9:
+ 468 0118 CF93      		push r28
+ 469 011a DF93      		push r29
+ 470               	/* prologue: function */
+ 471               	/* frame size = 0 */
+ 472               	/* stack size = 2 */
+ 473               	.L__stack_usage = 2
+ 474 011c EC01      		movw r28,r24
+  73:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   *image_checksum=eeprom_read_byte ((uint8_t*)EE_CURRENT_IMAGE_CHECKSUM);
+ 476               	.LM39:
+ 477 011e 87E0      		ldi r24,lo8(7)
+ 478 0120 90E0      		ldi r25,hi8(7)
+ 479 0122 0E94 0000 		call __eerd_byte_m1281
+ 480 0126 8883      		st Y,r24
+  74:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  75:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 482               	.LM40:
+ 483 0128 81E0      		ldi r24,lo8(1)
+ 484               	/* epilogue start */
+ 485 012a DF91      		pop r29
+ 486 012c CF91      		pop r28
+ 487 012e 0895      		ret
+ 489               	.Lscope9:
+ 491               		.stabd	78,0,0
+ 494               	.global	write_eeprom_current_image_checksum
+ 496               	write_eeprom_current_image_checksum:
+ 497               		.stabd	46,0,0
+  76:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  77:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t write_eeprom_current_image_checksum(uint8_t *image_checksum)
+  78:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 499               	.LM41:
+ 500               	.LFBB10:
+ 501               	/* prologue: function */
+ 502               	/* frame size = 0 */
+ 503               	/* stack size = 0 */
+ 504               	.L__stack_usage = 0
+ 505 0130 FC01      		movw r30,r24
+  79:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   eeprom_write_byte ((uint8_t*)EE_CURRENT_IMAGE_CHECKSUM, *image_checksum);
+ 507               	.LM42:
+ 508 0132 87E0      		ldi r24,lo8(7)
+ 509 0134 90E0      		ldi r25,hi8(7)
+ 510 0136 6081      		ld r22,Z
+ 511 0138 0E94 0000 		call __eewr_byte_m1281
+  80:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  81:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 513               	.LM43:
+ 514 013c 81E0      		ldi r24,lo8(1)
+ 515               	/* epilogue start */
+ 516 013e 0895      		ret
+ 518               	.Lscope10:
+ 520               		.stabd	78,0,0
+ 521               		.comm _nrk_signal_list,4,1
+ 522               		.comm error_task,1,1
+ 523               		.comm error_num,1,1
+ 528               	.Letext0:
+ 529               	.global __do_clear_bss
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 nrk_eeprom.c
+     /tmp/ccIQq68L.s:2      *ABS*:000000000000003f __SREG__
+     /tmp/ccIQq68L.s:3      *ABS*:000000000000003e __SP_H__
+     /tmp/ccIQq68L.s:4      *ABS*:000000000000003d __SP_L__
+     /tmp/ccIQq68L.s:5      *ABS*:0000000000000034 __CCP__
+     /tmp/ccIQq68L.s:6      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccIQq68L.s:7      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccIQq68L.s:129    .text:0000000000000000 nrk_eeprom_read_byte
+     /tmp/ccIQq68L.s:154    .text:0000000000000006 nrk_eeprom_write_byte
+     /tmp/ccIQq68L.s:177    .text:000000000000000c read_eeprom_mac_address
+     /tmp/ccIQq68L.s:270    .text:0000000000000078 read_eeprom_channel
+     /tmp/ccIQq68L.s:303    .text:0000000000000090 write_eeprom_load_img_pages
+     /tmp/ccIQq68L.s:332    .text:00000000000000a0 read_eeprom_load_img_pages
+     /tmp/ccIQq68L.s:364    .text:00000000000000b8 read_eeprom_aes_key
+     /tmp/ccIQq68L.s:413    .text:00000000000000e8 write_eeprom_aes_key
+     /tmp/ccIQq68L.s:463    .text:0000000000000118 read_eeprom_current_image_checksum
+     /tmp/ccIQq68L.s:496    .text:0000000000000130 write_eeprom_current_image_checksum
+                            *COM*:0000000000000004 _nrk_signal_list
+                            *COM*:0000000000000001 error_task
+                            *COM*:0000000000000001 error_num
+
+UNDEFINED SYMBOLS
+__eerd_byte_m1281
+__eewr_byte_m1281
+__do_clear_bss

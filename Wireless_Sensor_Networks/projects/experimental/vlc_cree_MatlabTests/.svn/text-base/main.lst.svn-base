@@ -1,0 +1,1363 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  10               		.text
+  11               	.Ltext0:
+ 299               	.global	my_timer_callback
+ 301               	my_timer_callback:
+ 302               		.stabd	46,0,0
+   1:main.c        **** /******************************************************************************
+   2:main.c        **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:main.c        **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:main.c        **** *  All rights reserved.
+   5:main.c        **** *
+   6:main.c        **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:main.c        **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:main.c        **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:main.c        **** *
+  10:main.c        **** *  This program is free software: you can redistribute it and/or modify
+  11:main.c        **** *  it under the terms of the GNU General Public License as published by
+  12:main.c        **** *  the Free Software Foundation, version 2.0 of the License.
+  13:main.c        **** *
+  14:main.c        **** *  This program is distributed in the hope that it will be useful,
+  15:main.c        **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:main.c        **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:main.c        **** *  GNU General Public License for more details.
+  18:main.c        **** *
+  19:main.c        **** *  You should have received a copy of the GNU General Public License
+  20:main.c        **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:main.c        **** *
+  22:main.c        **** *******************************************************************************/
+  23:main.c        **** //OOK modulation
+  24:main.c        **** //Configure the number of nodes. For each node, send through serial the OFF freq, ON freq and the D
+  25:main.c        **** //Send 200 as the first byte in the serial packet to keep the LED ON for 30 seconds
+  26:main.c        **** #include <nrk.h>
+  27:main.c        **** #include <include.h>
+  28:main.c        **** #include <ulib.h>
+  29:main.c        **** #include <stdio.h>
+  30:main.c        **** #include <avr/sleep.h>
+  31:main.c        **** #include <hal.h>
+  32:main.c        **** #include <nrk_error.h>
+  33:main.c        **** #include <nrk_timer.h>
+  34:main.c        **** #include <nrk_stack_check.h>
+  35:main.c        **** 
+  36:main.c        **** 
+  37:main.c        **** 
+  38:main.c        **** // This is the address in the msg array that this node will use
+  39:main.c        **** #define VLC_ADDR	0
+  40:main.c        **** 
+  41:main.c        **** // This is the total number of nodes supported
+  42:main.c        **** #define TOTAL_NODES	1
+  43:main.c        **** 
+  44:main.c        **** 
+  45:main.c        **** #define MSG_SIZE	3
+  46:main.c        **** #define MSG_BUF_SIZE	(MSG_SIZE*TOTAL_NODES)		
+  47:main.c        **** #define SYMBOL_LEN	50
+  48:main.c        **** uint8_t msg_buf[MSG_BUF_SIZE];
+  49:main.c        **** 
+  50:main.c        **** nrk_sig_t uart_rx_signal;
+  51:main.c        **** nrk_sig_mask_t sm;
+  52:main.c        **** 
+  53:main.c        **** NRK_STK Stack1[NRK_APP_STACKSIZE];
+  54:main.c        **** nrk_task_type TaskOne;
+  55:main.c        **** void Task1(void);
+  56:main.c        **** 
+  57:main.c        **** NRK_STK Stack2[NRK_APP_STACKSIZE];
+  58:main.c        **** nrk_task_type TaskTwo;
+  59:main.c        **** void Task2 (void);
+  60:main.c        **** /*
+  61:main.c        **** NRK_STK Stack3[NRK_APP_STACKSIZE];
+  62:main.c        **** nrk_task_type TaskThree;
+  63:main.c        **** void Task3 (void);*/
+  64:main.c        **** 
+  65:main.c        **** uint16_t compare_vt;
+  66:main.c        **** uint8_t f_toggle=0;
+  67:main.c        **** uint8_t freq_f=0;
+  68:main.c        **** uint8_t led_active;
+  69:main.c        **** 
+  70:main.c        **** void nrk_create_taskset();
+  71:main.c        **** 
+  72:main.c        **** int main ()
+  73:main.c        **** {
+  74:main.c        ****   uint8_t t;
+  75:main.c        ****   
+  76:main.c        ****   nrk_setup_ports();
+  77:main.c        ****   nrk_setup_uart(UART_BAUDRATE_115K2);
+  78:main.c        ****   
+  79:main.c        ****   DDRF = 0xff;
+  80:main.c        ****   DDRB = 0xff;	
+  81:main.c        ****   nrk_kprintf( PSTR("Starting up...\r\n") );
+  82:main.c        **** 
+  83:main.c        ****   Task2();
+  84:main.c        **** 
+  85:main.c        ****   nrk_init();
+  86:main.c        **** 
+  87:main.c        ****  
+  88:main.c        ****   nrk_time_set(0,0);
+  89:main.c        ****   nrk_create_taskset ();
+  90:main.c        ****   nrk_start();
+  91:main.c        ****   return 0;
+  92:main.c        **** }
+  93:main.c        **** 
+  94:main.c        **** void my_timer_callback()
+  95:main.c        **** {
+ 304               	.LM0:
+ 305               	.LFBB1:
+ 306               	/* prologue: function */
+ 307               	/* frame size = 0 */
+ 308               	/* stack size = 0 */
+ 309               	.L__stack_usage = 0
+  96:main.c        **** //	TCNT3 = 0;//Ideally this should be happening automatically, but the count match gets missed some
+  97:main.c        **** 	//nrk_led_toggle(ORANGE_LED);
+  98:main.c        **** 	//PORTF ^= 0xff;
+  99:main.c        **** 	//nrk_gpio_toggle(NRK_DEBUG_0);
+ 100:main.c        **** //	nrk_led_set(ORANGE_LED);	
+ 101:main.c        **** 	PORTF ^= 0xff;
+ 311               	.LM1:
+ 312 0000 81B3      		in r24,49-32
+ 313 0002 8095      		com r24
+ 314 0004 81BB      		out 49-32,r24
+ 102:main.c        **** 	PORTB ^= 0x40;
+ 316               	.LM2:
+ 317 0006 85B1      		in r24,37-32
+ 318 0008 90E4      		ldi r25,lo8(64)
+ 319 000a 8927      		eor r24,r25
+ 320 000c 85B9      		out 37-32,r24
+ 103:main.c        **** 	switch(freq_f)
+ 322               	.LM3:
+ 323 000e 8091 0000 		lds r24,freq_f
+ 324 0012 8330      		cpi r24,lo8(3)
+ 325 0014 01F0      		breq .L5
+ 326 0016 8430      		cpi r24,lo8(4)
+ 327 0018 00F4      		brsh .L8
+ 328 001a 8130      		cpi r24,lo8(1)
+ 329 001c 01F0      		breq .L3
+ 330 001e 8230      		cpi r24,lo8(2)
+ 331 0020 01F4      		brne .L2
+ 332 0022 00C0      		rjmp .L11
+ 333               	.L8:
+ 334 0024 8830      		cpi r24,lo8(8)
+ 335 0026 01F4      		brne .L2
+ 336 0028 00C0      		rjmp .L6
+ 337               	.L3:
+ 104:main.c        **** 	{
+ 105:main.c        **** 		case 1://1k
+ 106:main.c        **** 			compare_vt = 8000;
+ 339               	.LM4:
+ 340 002a 80E4      		ldi r24,lo8(8000)
+ 341 002c 9FE1      		ldi r25,hi8(8000)
+ 342 002e 00C0      		rjmp .L10
+ 343               	.L11:
+ 107:main.c        **** 			break;
+ 108:main.c        **** 
+ 109:main.c        **** 		case 2://2k
+ 110:main.c        **** 			compare_vt = 4000;
+ 345               	.LM5:
+ 346 0030 80EA      		ldi r24,lo8(4000)
+ 347 0032 9FE0      		ldi r25,hi8(4000)
+ 348 0034 00C0      		rjmp .L10
+ 349               	.L5:
+ 111:main.c        **** 			break;
+ 112:main.c        **** 
+ 113:main.c        **** 		case 3://3k
+ 114:main.c        **** 			compare_vt = 2667;
+ 351               	.LM6:
+ 352 0036 8BE6      		ldi r24,lo8(2667)
+ 353 0038 9AE0      		ldi r25,hi8(2667)
+ 354 003a 00C0      		rjmp .L10
+ 355               	.L6:
+ 115:main.c        **** 			break;
+ 116:main.c        **** 
+ 117:main.c        **** 		case 8://8k
+ 118:main.c        **** 			compare_vt = 1000;
+ 357               	.LM7:
+ 358 003c 88EE      		ldi r24,lo8(1000)
+ 359 003e 93E0      		ldi r25,hi8(1000)
+ 360 0040 00C0      		rjmp .L10
+ 361               	.L2:
+ 119:main.c        **** 			break;
+ 120:main.c        **** 		
+ 121:main.c        **** 		case 10://10k
+ 122:main.c        **** 			compare_vt = 800;
+ 123:main.c        **** 			break;
+ 124:main.c        **** 
+ 125:main.c        **** 		default://10k
+ 126:main.c        **** 			compare_vt = 800;
+ 363               	.LM8:
+ 364 0042 80E2      		ldi r24,lo8(800)
+ 365 0044 93E0      		ldi r25,hi8(800)
+ 366               	.L10:
+ 367 0046 9093 0000 		sts compare_vt+1,r25
+ 368 004a 8093 0000 		sts compare_vt,r24
+ 127:main.c        **** 			break;
+ 128:main.c        **** 	}
+ 129:main.c        **** //		if(compare_vt<TCNT3) printf( "TCNT3=%d cvt=%d\r\n",TCNT3,compare_vt );
+ 130:main.c        **** 		//Load new compare value to the Timer Compare registers
+ 131:main.c        **** 	OCR3AH = (compare_vt >> 8) & 0xFF;
+ 370               	.LM9:
+ 371 004e 8091 0000 		lds r24,compare_vt+1
+ 372 0052 8093 9900 		sts 153,r24
+ 132:main.c        **** 	OCR3AL = (compare_vt & 0xFF);
+ 374               	.LM10:
+ 375 0056 8091 0000 		lds r24,compare_vt
+ 376 005a 8093 9800 		sts 152,r24
+ 133:main.c        **** 	nrk_led_clr(ORANGE_LED);
+ 378               	.LM11:
+ 379 005e 82E0      		ldi r24,lo8(2)
+ 380 0060 90E0      		ldi r25,hi8(2)
+ 381 0062 0E94 0000 		call nrk_led_clr
+ 382               	/* epilogue start */
+ 134:main.c        **** }
+ 384               	.LM12:
+ 385 0066 0895      		ret
+ 387               	.Lscope1:
+ 389               		.stabd	78,0,0
+ 390               		.data
+ 391               	.LC0:
+ 392 0000 564C 4320 		.string	"VLC address is %d\r\n"
+ 392      6164 6472 
+ 392      6573 7320 
+ 392      6973 2025 
+ 392      640D 0A00 
+ 393               	.LC1:
+ 394 0014 5461 736B 		.string	"Task1 PID=%d\r\n"
+ 394      3120 5049 
+ 394      443D 2564 
+ 394      0D0A 00
+ 395               		.text
+ 397               	.global	Task1
+ 399               	Task1:
+ 400               		.stabd	46,0,0
+ 135:main.c        **** 
+ 136:main.c        **** void Task1()
+ 137:main.c        **** {
+ 402               	.LM13:
+ 403               	.LFBB2:
+ 404               	/* prologue: function */
+ 405               	/* frame size = 0 */
+ 406               	/* stack size = 0 */
+ 407               	.L__stack_usage = 0
+ 138:main.c        **** 	
+ 139:main.c        **** 
+ 140:main.c        ****   printf( "VLC address is %d\r\n",VLC_ADDR);
+ 409               	.LM14:
+ 410 0068 00D0      		rcall .
+ 411 006a 00D0      		rcall .
+ 412 006c 80E0      		ldi r24,lo8(.LC0)
+ 413 006e 90E0      		ldi r25,hi8(.LC0)
+ 414 0070 ADB7      		in r26,__SP_L__
+ 415 0072 BEB7      		in r27,__SP_H__
+ 416 0074 1296      		adiw r26,1+1
+ 417 0076 9C93      		st X,r25
+ 418 0078 8E93      		st -X,r24
+ 419 007a 1197      		sbiw r26,1
+ 420 007c 1496      		adiw r26,3+1
+ 421 007e 1C92      		st X,__zero_reg__
+ 422 0080 1E92      		st -X,__zero_reg__
+ 423 0082 1397      		sbiw r26,3
+ 424 0084 0E94 0000 		call printf
+ 141:main.c        ****   printf( "Task1 PID=%d\r\n",nrk_get_pid());
+ 426               	.LM15:
+ 427 0088 0F90      		pop __tmp_reg__
+ 428 008a 0F90      		pop __tmp_reg__
+ 429 008c 0F90      		pop __tmp_reg__
+ 430 008e 0F90      		pop __tmp_reg__
+ 431 0090 0E94 0000 		call nrk_get_pid
+ 432 0094 00D0      		rcall .
+ 433 0096 00D0      		rcall .
+ 434 0098 EDB7      		in r30,__SP_L__
+ 435 009a FEB7      		in r31,__SP_H__
+ 436 009c 3196      		adiw r30,1
+ 437 009e 20E0      		ldi r18,lo8(.LC1)
+ 438 00a0 30E0      		ldi r19,hi8(.LC1)
+ 439 00a2 ADB7      		in r26,__SP_L__
+ 440 00a4 BEB7      		in r27,__SP_H__
+ 441 00a6 1296      		adiw r26,1+1
+ 442 00a8 3C93      		st X,r19
+ 443 00aa 2E93      		st -X,r18
+ 444 00ac 1197      		sbiw r26,1
+ 445 00ae 8283      		std Z+2,r24
+ 446 00b0 1382      		std Z+3,__zero_reg__
+ 447 00b2 0E94 0000 		call printf
+ 448 00b6 0F90      		pop __tmp_reg__
+ 449 00b8 0F90      		pop __tmp_reg__
+ 450 00ba 0F90      		pop __tmp_reg__
+ 451 00bc 0F90      		pop __tmp_reg__
+ 452               	.L13:
+ 142:main.c        **** 
+ 143:main.c        **** 		
+ 144:main.c        **** 	while(1)
+ 145:main.c        **** 		nrk_wait_until_next_period();
+ 454               	.LM16:
+ 455 00be 0E94 0000 		call nrk_wait_until_next_period
+ 456 00c2 00C0      		rjmp .L13
+ 458               	.Lscope2:
+ 460               		.stabd	78,0,0
+ 463               	.global	spin_wait_ms
+ 465               	spin_wait_ms:
+ 466               		.stabd	46,0,0
+ 146:main.c        **** }
+ 147:main.c        **** 
+ 148:main.c        **** uint8_t spin_wait_ms(uint16_t t)
+ 149:main.c        **** {
+ 468               	.LM17:
+ 469               	.LFBB3:
+ 470 00c4 DF93      		push r29
+ 471 00c6 CF93      		push r28
+ 472 00c8 00D0      		rcall .
+ 473 00ca CDB7      		in r28,__SP_L__
+ 474 00cc DEB7      		in r29,__SP_H__
+ 475               	/* prologue: function */
+ 476               	/* frame size = 2 */
+ 477               	/* stack size = 4 */
+ 478               	.L__stack_usage = 4
+ 150:main.c        **** 	volatile uint16_t x,y;
+ 151:main.c        **** 
+ 152:main.c        **** 	// Counter seems to be going twice as fast?
+ 153:main.c        **** 	//y=t*2;
+ 154:main.c        **** 	// set the interrupt to trigger at a high value (i.e. don't let it fire)
+ 155:main.c        **** 
+ 156:main.c        **** 	if(t>2) t=t-2;
+ 480               	.LM18:
+ 481 00ce 8330      		cpi r24,3
+ 482 00d0 9105      		cpc r25,__zero_reg__
+ 483 00d2 00F0      		brlo .L15
+ 485               	.LM19:
+ 486 00d4 0297      		sbiw r24,2
+ 487               	.L15:
+ 157:main.c        **** 	TCCR2A = 0; // Start OS timer
+ 489               	.LM20:
+ 490 00d6 1092 B000 		sts 176,__zero_reg__
+ 158:main.c        **** 	TCCR2B = 0;  // Start OS timer
+ 492               	.LM21:
+ 493 00da 1092 B100 		sts 177,__zero_reg__
+ 159:main.c        **** 	TCNT2=0;
+ 495               	.LM22:
+ 496 00de 1092 B200 		sts 178,__zero_reg__
+ 160:main.c        **** 	GTCCR |= BM(PSRASY);              // reset prescaler
+ 498               	.LM23:
+ 499 00e2 23B5      		in r18,67-32
+ 500 00e4 2260      		ori r18,lo8(2)
+ 501 00e6 23BD      		out 67-32,r18
+ 161:main.c        **** 	GTCCR |= BM(PSRSYNC);
+ 503               	.LM24:
+ 504 00e8 23B5      		in r18,67-32
+ 505 00ea 2160      		ori r18,lo8(1)
+ 506 00ec 23BD      		out 67-32,r18
+ 162:main.c        **** 	//TCCR2A = 0; // Start OS timer
+ 163:main.c        **** 	//TCCR2A = BM(WGM21);
+ 164:main.c        **** 	TCCR2B = BM(CS21) | BM(CS20);  // Start OS timer
+ 508               	.LM25:
+ 509 00ee 23E0      		ldi r18,lo8(3)
+ 510 00f0 2093 B100 		sts 177,r18
+ 511               	.L16:
+ 165:main.c        **** 	//_nrk_os_timer_start();
+ 166:main.c        **** 	// spin on timer value
+ 167:main.c        **** 	while(1){ 
+ 168:main.c        **** 	x=(volatile)TCNT2;
+ 513               	.LM26:
+ 514 00f4 2091 B200 		lds r18,178
+ 515 00f8 30E0      		ldi r19,lo8(0)
+ 516 00fa 3A83      		std Y+2,r19
+ 517 00fc 2983      		std Y+1,r18
+ 169:main.c        **** 	//`printf( "Loop: T2=%d\r\n",TCNT2);
+ 170:main.c        **** 	if(x>t) break;
+ 519               	.LM27:
+ 520 00fe 2981      		ldd r18,Y+1
+ 521 0100 3A81      		ldd r19,Y+2
+ 522 0102 8217      		cp r24,r18
+ 523 0104 9307      		cpc r25,r19
+ 524 0106 00F4      		brsh .L16
+ 171:main.c        **** 	 } 
+ 172:main.c        **** 	TCCR2A = 0; 
+ 526               	.LM28:
+ 527 0108 1092 B000 		sts 176,__zero_reg__
+ 173:main.c        **** 	TCCR2B = 0;  
+ 529               	.LM29:
+ 530 010c 1092 B100 		sts 177,__zero_reg__
+ 174:main.c        **** 	TCNT2=0;
+ 532               	.LM30:
+ 533 0110 1092 B200 		sts 178,__zero_reg__
+ 175:main.c        **** 	nrk_spin_wait_us(2000);
+ 535               	.LM31:
+ 536 0114 80ED      		ldi r24,lo8(2000)
+ 537 0116 97E0      		ldi r25,hi8(2000)
+ 538 0118 0E94 0000 		call nrk_spin_wait_us
+ 539               	/* epilogue start */
+ 176:main.c        **** 	//printf( "%d\r\n",TCNT2);
+ 177:main.c        **** }
+ 541               	.LM32:
+ 542 011c 0F90      		pop __tmp_reg__
+ 543 011e 0F90      		pop __tmp_reg__
+ 544 0120 CF91      		pop r28
+ 545 0122 DF91      		pop r29
+ 546 0124 0895      		ret
+ 551               	.Lscope3:
+ 553               		.stabd	78,0,0
+ 554               		.data
+ 555               	.LC2:
+ 556 0023 4D79 206E 		.string	"My node's address is %d\r\n"
+ 556      6F64 6527 
+ 556      7320 6164 
+ 556      6472 6573 
+ 556      7320 6973 
+ 557               	.LC3:
+ 558 003d 5461 736B 		.string	"Task2 PID=%d\r\n"
+ 558      3220 5049 
+ 558      443D 2564 
+ 558      0D0A 00
+ 559               	.LC4:
+ 560 004c 0D0A 4475 		.string	"\r\nDummy printf for delay!!!!!!!!"
+ 560      6D6D 7920 
+ 560      7072 696E 
+ 560      7466 2066 
+ 560      6F72 2064 
+ 561               		.text
+ 563               	.global	Task2
+ 565               	Task2:
+ 566               		.stabd	46,0,0
+ 178:main.c        **** 
+ 179:main.c        **** void Task2()
+ 180:main.c        **** {
+ 568               	.LM33:
+ 569               	.LFBB4:
+ 570 0126 4F92      		push r4
+ 571 0128 5F92      		push r5
+ 572 012a 7F92      		push r7
+ 573 012c 8F92      		push r8
+ 574 012e 9F92      		push r9
+ 575 0130 AF92      		push r10
+ 576 0132 BF92      		push r11
+ 577 0134 CF92      		push r12
+ 578 0136 DF92      		push r13
+ 579 0138 EF92      		push r14
+ 580 013a FF92      		push r15
+ 581 013c 0F93      		push r16
+ 582 013e 1F93      		push r17
+ 583 0140 DF93      		push r29
+ 584 0142 CF93      		push r28
+ 585 0144 0F92      		push __tmp_reg__
+ 586 0146 CDB7      		in r28,__SP_L__
+ 587 0148 DEB7      		in r29,__SP_H__
+ 588               	/* prologue: function */
+ 589               	/* frame size = 1 */
+ 590               	/* stack size = 16 */
+ 591               	.L__stack_usage = 16
+ 181:main.c        **** 	uint16_t cnt,compare_v;
+ 182:main.c        **** 	uint8_t bcnt=0,c;
+ 183:main.c        **** 	uint8_t bit,i,k;
+ 184:main.c        **** 	int8_t val;
+ 185:main.c        **** 	uint8_t tx_val;
+ 186:main.c        **** 	uint8_t Nbits = 8;//10;//8 = 2 preamble bits + 6 data bits
+ 187:main.c        **** 	uint8_t index,ready;
+ 188:main.c        **** 	uint8_t f_high,f_low,f_default;
+ 189:main.c        **** 	uint16_t loop1,loop2,loop3,loop4;
+ 190:main.c        **** 	f_default = 8;
+ 191:main.c        **** 
+ 192:main.c        **** 	// Timer 0 Setup as Asynchronous timer running from 32Khz Clock
+ 193:main.c        **** 	ASSR = BM(AS2);
+ 593               	.LM34:
+ 594 014a 80E2      		ldi r24,lo8(32)
+ 595 014c 8093 B600 		sts 182,r24
+ 194:main.c        **** 	OCR2A = 255; 
+ 597               	.LM35:
+ 598 0150 8FEF      		ldi r24,lo8(-1)
+ 599 0152 8093 B300 		sts 179,r24
+ 195:main.c        **** 	//OCR2B = 2;
+ 196:main.c        **** 	TIFR2 =   BM(OCF2A) | BM(TOV2); //| BM(OCF2B2) ;       // Clear interrupt flag
+ 601               	.LM36:
+ 602 0156 83E0      		ldi r24,lo8(3)
+ 603 0158 87BB      		out 55-32,r24
+ 197:main.c        **** 	TCCR2A = BM(WGM21);
+ 605               	.LM37:
+ 606 015a 92E0      		ldi r25,lo8(2)
+ 607 015c 9093 B000 		sts 176,r25
+ 198:main.c        **** 	TCCR2B = BM(CS21) | BM(CS20); //|      // reset counter on interrupt, set divider to 128
+ 609               	.LM38:
+ 610 0160 8093 B100 		sts 177,r24
+ 199:main.c        **** 	GTCCR |= BM(PSRASY);              // reset prescaler
+ 612               	.LM39:
+ 613 0164 93B5      		in r25,67-32
+ 614 0166 9260      		ori r25,lo8(2)
+ 615 0168 93BD      		out 67-32,r25
+ 200:main.c        **** 	// Clear interrupt flag
+ 201:main.c        **** 	TIFR2 =   BM(OCF2A) | BM(TOV2);
+ 617               	.LM40:
+ 618 016a 87BB      		out 55-32,r24
+ 202:main.c        **** 	// reset counter on interrupt, set divider to 128
+ 203:main.c        **** 	//TCCR0A = BM(WGM01) | BM(CS01) | BM(CS00);
+ 204:main.c        **** 	// reset prescaler
+ 205:main.c        **** 	//GTCCR |= TSM;              
+ 206:main.c        **** 	GTCCR |= BM(PSRASY);              // reset prescaler
+ 620               	.LM41:
+ 621 016c 83B5      		in r24,67-32
+ 622 016e 8260      		ori r24,lo8(2)
+ 623 0170 83BD      		out 67-32,r24
+ 207:main.c        **** 	GTCCR |= BM(PSRSYNC);
+ 625               	.LM42:
+ 626 0172 83B5      		in r24,67-32
+ 627 0174 8160      		ori r24,lo8(1)
+ 628 0176 83BD      		out 67-32,r24
+ 208:main.c        **** 
+ 209:main.c        **** 	_nrk_os_timer_stop();
+ 630               	.LM43:
+ 631 0178 0E94 0000 		call _nrk_os_timer_stop
+ 210:main.c        **** 
+ 211:main.c        **** 
+ 212:main.c        ****     printf( "My node's address is %d\r\n",VLC_ADDR);
+ 633               	.LM44:
+ 634 017c 00D0      		rcall .
+ 635 017e 00D0      		rcall .
+ 636 0180 80E0      		ldi r24,lo8(.LC2)
+ 637 0182 90E0      		ldi r25,hi8(.LC2)
+ 638 0184 ADB7      		in r26,__SP_L__
+ 639 0186 BEB7      		in r27,__SP_H__
+ 640 0188 1296      		adiw r26,1+1
+ 641 018a 9C93      		st X,r25
+ 642 018c 8E93      		st -X,r24
+ 643 018e 1197      		sbiw r26,1
+ 644 0190 1496      		adiw r26,3+1
+ 645 0192 1C92      		st X,__zero_reg__
+ 646 0194 1E92      		st -X,__zero_reg__
+ 647 0196 1397      		sbiw r26,3
+ 648 0198 0E94 0000 		call printf
+ 213:main.c        **** 	printf( "Task2 PID=%d\r\n",nrk_get_pid());
+ 650               	.LM45:
+ 651 019c 0F90      		pop __tmp_reg__
+ 652 019e 0F90      		pop __tmp_reg__
+ 653 01a0 0F90      		pop __tmp_reg__
+ 654 01a2 0F90      		pop __tmp_reg__
+ 655 01a4 0E94 0000 		call nrk_get_pid
+ 656 01a8 00D0      		rcall .
+ 657 01aa 00D0      		rcall .
+ 658 01ac EDB7      		in r30,__SP_L__
+ 659 01ae FEB7      		in r31,__SP_H__
+ 660 01b0 3196      		adiw r30,1
+ 661 01b2 20E0      		ldi r18,lo8(.LC3)
+ 662 01b4 30E0      		ldi r19,hi8(.LC3)
+ 663 01b6 ADB7      		in r26,__SP_L__
+ 664 01b8 BEB7      		in r27,__SP_H__
+ 665 01ba 1296      		adiw r26,1+1
+ 666 01bc 3C93      		st X,r19
+ 667 01be 2E93      		st -X,r18
+ 668 01c0 1197      		sbiw r26,1
+ 669 01c2 8283      		std Z+2,r24
+ 670 01c4 1382      		std Z+3,__zero_reg__
+ 671 01c6 0E94 0000 		call printf
+ 214:main.c        ****   	cnt=0;
+ 215:main.c        **** 
+ 216:main.c        **** 	if(VLC_ADDR>=TOTAL_NODES) {
+ 217:main.c        **** 	nrk_kprintf( PSTR("VLC address greated than total nodes\r\n"));
+ 218:main.c        **** 	nrk_led_set(RED_LED);	
+ 219:main.c        **** 	while(1);
+ 220:main.c        **** 	}
+ 221:main.c        **** 
+ 222:main.c        **** 	nrk_int_enable(); 
+ 673               	.LM46:
+ 674 01ca 0F90      		pop __tmp_reg__
+ 675 01cc 0F90      		pop __tmp_reg__
+ 676 01ce 0F90      		pop __tmp_reg__
+ 677 01d0 0F90      		pop __tmp_reg__
+ 678 01d2 0E94 0000 		call nrk_int_enable
+ 223:main.c        **** 	val=nrk_timer_int_configure(NRK_APP_TIMER_0, 1, 800, &my_timer_callback );// this will give a 400H
+ 680               	.LM47:
+ 681 01d6 80E0      		ldi r24,lo8(0)
+ 682 01d8 61E0      		ldi r22,lo8(1)
+ 683 01da 70E0      		ldi r23,hi8(1)
+ 684 01dc 40E2      		ldi r20,lo8(800)
+ 685 01de 53E0      		ldi r21,hi8(800)
+ 686 01e0 20E0      		ldi r18,lo8(gs(my_timer_callback))
+ 687 01e2 30E0      		ldi r19,hi8(gs(my_timer_callback))
+ 688 01e4 0E94 0000 		call nrk_timer_int_configure
+ 224:main.c        **** 	if(val==NRK_OK) nrk_kprintf( PSTR("Callback timer setup\r\n"));
+ 690               	.LM48:
+ 691 01e8 8130      		cpi r24,lo8(1)
+ 692 01ea 01F4      		brne .L19
+ 694               	.LM49:
+ 695 01ec 80E0      		ldi r24,lo8(__c.2879)
+ 696 01ee 90E0      		ldi r25,hi8(__c.2879)
+ 697 01f0 00C0      		rjmp .L60
+ 698               	.L19:
+ 225:main.c        **** 	else nrk_kprintf( PSTR("Error setting up timer callback\r\n"));
+ 700               	.LM50:
+ 701 01f2 80E0      		ldi r24,lo8(__c.2881)
+ 702 01f4 90E0      		ldi r25,hi8(__c.2881)
+ 703               	.L60:
+ 704 01f6 0E94 0000 		call nrk_kprintf
+ 226:main.c        **** 
+ 227:main.c        **** 	freq_f = f_default;
+ 706               	.LM51:
+ 707 01fa 88E0      		ldi r24,lo8(8)
+ 708 01fc 8093 0000 		sts freq_f,r24
+ 228:main.c        **** 	nrk_timer_int_reset(NRK_APP_TIMER_0);
+ 710               	.LM52:
+ 711 0200 80E0      		ldi r24,lo8(0)
+ 712 0202 0E94 0000 		call nrk_timer_int_reset
+ 229:main.c        **** 	TCNT3 = 0;
+ 714               	.LM53:
+ 715 0206 1092 9500 		sts 148+1,__zero_reg__
+ 716 020a 1092 9400 		sts 148,__zero_reg__
+ 230:main.c        **** 	nrk_timer_int_start(NRK_APP_TIMER_0);
+ 718               	.LM54:
+ 719 020e 80E0      		ldi r24,lo8(0)
+ 720 0210 0E94 0000 		call nrk_timer_int_start
+ 231:main.c        **** 	
+ 232:main.c        **** 	while(1)
+ 233:main.c        **** 	{
+ 234:main.c        **** 		freq_f = f_default;	
+ 722               	.LM55:
+ 723 0214 E8E0      		ldi r30,lo8(8)
+ 724 0216 BE2E      		mov r11,r30
+ 235:main.c        **** 		// stop interrupt
+ 236:main.c        **** 		//cree nrk_timer_int_stop(NRK_APP_TIMER_0);
+ 237:main.c        **** 		// turn off LED
+ 238:main.c        **** //		nrk_led_clr(ORANGE_LED);
+ 239:main.c        **** 	//	PORTF = 0x0;
+ 240:main.c        **** 
+ 241:main.c        **** 		index=0;
+ 242:main.c        **** 		ready=0;
+ 243:main.c        **** 		f_toggle=0;
+ 244:main.c        **** 
+ 245:main.c        **** 		
+ 246:main.c        **** 		// Polling UART receive to avoid timing overhead of using signals (up to 1ms)
+ 247:main.c        **** 		do{
+ 248:main.c        **** 		c = getchar();
+ 249:main.c        **** 		}while(c!='#');
+ 250:main.c        **** 		//Waits to get #, this is to avoid the loop below getting stuck in case junk is received from ser
+ 251:main.c        **** 		nrk_led_set(GREEN_LED);
+ 252:main.c        **** 
+ 253:main.c        **** 		do {
+ 254:main.c        **** 		c=getchar();
+ 255:main.c        **** 		if(index==MSG_BUF_SIZE && c=='z' ) ready=1;//changed '\r' tp 'z'
+ 726               	.LM56:
+ 727 0218 AA24      		clr r10
+ 728 021a A394      		inc r10
+ 256:main.c        **** 		else msg_buf[index]=c;	
+ 257:main.c        **** 		if(index<MSG_BUF_SIZE) index++;
+ 258:main.c        **** 		else  { index=0; nrk_led_set(RED_LED); }
+ 259:main.c        **** 		if(c=='z' && ready==0) { index=0; nrk_led_set(RED_LED);  }
+ 260:main.c        **** 		} while(!ready);
+ 261:main.c        **** 		nrk_led_clr(RED_LED);
+ 262:main.c        **** 		nrk_led_clr(GREEN_LED);
+ 263:main.c        **** 
+ 264:main.c        **** 		// Grab low frequency value
+ 265:main.c        **** 		f_low=msg_buf[VLC_ADDR*MSG_SIZE];
+ 266:main.c        **** 		f_high=msg_buf[VLC_ADDR*MSG_SIZE+1];
+ 267:main.c        **** 		tx_val=msg_buf[VLC_ADDR*MSG_SIZE+2];
+ 268:main.c        **** 		f_low = 3;f_high = 8;
+ 269:main.c        **** 		tx_val = 0x26;//6 bits
+ 270:main.c        **** 
+ 271:main.c        **** 		// Lets pad out the first bit
+ 272:main.c        **** //		freq_f = f_default;
+ 273:main.c        **** 		// setup the timer for the first cycle and make sure its cleared to 0
+ 274:main.c        **** 		/*nrk_timer_int_reset(NRK_APP_TIMER_0);
+ 275:main.c        **** 		TCNT3 = 0;
+ 276:main.c        **** 		OCR3AH = 0;
+ 277:main.c        **** 		OCR3AL = 100;
+ 278:main.c        **** 		// Zero the timer...
+ 279:main.c        **** 		// Start the timer...
+ 280:main.c        **** 		nrk_timer_int_start(NRK_APP_TIMER_0);
+ 281:main.c        **** */ //cree
+ 282:main.c        **** 		led_active=1;		
+ 283:main.c        **** 		nrk_led_toggle(BLUE_LED);
+ 284:main.c        **** 
+ 285:main.c        **** 		// really terrible hack to trick OS into doing proper timing...
+ 286:main.c        **** 		// we might not need this os_timer_reset() anymore...  It could be causing problems
+ 287:main.c        **** //		_nrk_os_timer_reset();
+ 288:main.c        **** //		nrk_wait_until_ticks(33);
+ 289:main.c        **** 
+ 290:main.c        **** 		// It might be safer to call wait_until_next_period() except that it won't be phase-aligned betwe
+ 291:main.c        **** 		// nrk_wait_until_next_period();
+ 292:main.c        **** 		if(msg_buf[0]==200)	//To keep the light ON constant for 30 seconds, just send decimal 200 in the 
+ 293:main.c        **** 					//Since we are using only values 1-10 for the frequencies, using 200 as an identifier should b
+ 294:main.c        **** 		{
+ 295:main.c        **** 			freq_f = f_low; //We want the light ON at constant luminosity. Duty cycle matching has been done
+ 296:main.c        **** 					//So the freq does not matter. Just keep it constant
+ 297:main.c        **** 			//_nrk_os_timer_reset();
+ 298:main.c        **** 			//nrk_wait_until_ticks(30000);
+ 299:main.c        **** 			for(k=0; k<200; k++ ) spin_wait_ms(100);
+ 300:main.c        **** 		}
+ 301:main.c        **** 		else
+ 302:main.c        **** 		{
+ 303:main.c        **** 			// Send data...	
+ 304:main.c        **** 			for(bcnt=0; bcnt<Nbits; bcnt++ )
+ 305:main.c        **** 			{	
+ 306:main.c        **** 			
+ 307:main.c        **** 				switch(bcnt)
+ 308:main.c        **** 				{
+ 309:main.c        **** 				case 0:
+ 310:main.c        **** 					// preamble freq f1; 
+ 311:main.c        **** 					freq_f=2;
+ 312:main.c        **** 				break;
+ 313:main.c        **** 				case 1://Send an ON - f2
+ 314:main.c        **** 					freq_f=f_low;
+ 315:main.c        **** 				break;
+ 316:main.c        **** 				default://Data bits
+ 317:main.c        **** 					//Send f2 of f_inf depending on bit
+ 318:main.c        **** 					bit = (tx_val>>(Nbits-1-bcnt))&0x01;//MSB first
+ 319:main.c        **** 					if(bit==1)
+ 320:main.c        **** 						freq_f = f_low;
+ 321:main.c        **** 					else
+ 322:main.c        **** 						freq_f = f_high;
+ 323:main.c        **** 				}	
+ 324:main.c        **** //				printf("\r\nFreq %d",freq_f);
+ 325:main.c        **** 				// It might be safer to call wait_until_next_period() except that 
+ 326:main.c        **** 				// it won't be phase-aligned between boards
+ 327:main.c        **** 				//nrk_wait_until_next_period();
+ 328:main.c        **** 				//_nrk_os_timer_reset();
+ 329:main.c        **** 				if(bcnt == 0)	//Let sync preamble length remain 1 symbol - so that preamble peak is clear
+ 330:main.c        **** 				{
+ 331:main.c        **** 				//		spin_wait_ms(33);
+ 332:main.c        **** 						//delayof 33ms				
+ 333:main.c        **** 						for(loop2=0;loop2<13;loop2++)
+ 334:main.c        **** 						printf("\r\nDummy printf for delay!!!!!!!!");//nrk_led_set(ORANGE_LED);
+ 730               	.LM57:
+ 731 021c 70E0      		ldi r23,lo8(.LC4)
+ 732 021e 472E      		mov r4,r23
+ 733 0220 70E0      		ldi r23,hi8(.LC4)
+ 734 0222 572E      		mov r5,r23
+ 318:main.c        **** 					bit = (tx_val>>(Nbits-1-bcnt))&0x01;//MSB first
+ 736               	.LM58:
+ 737 0224 66E2      		ldi r22,lo8(38)
+ 738 0226 862E      		mov r8,r22
+ 739 0228 912C      		mov r9,__zero_reg__
+ 311:main.c        **** 					freq_f=2;
+ 741               	.LM59:
+ 742 022a 52E0      		ldi r21,lo8(2)
+ 743 022c 752E      		mov r7,r21
+ 320:main.c        **** 						freq_f = f_low;
+ 745               	.LM60:
+ 746 022e 43E0      		ldi r20,lo8(3)
+ 747 0230 C42E      		mov r12,r20
+ 748               	.L58:
+ 234:main.c        **** 		freq_f = f_default;	
+ 750               	.LM61:
+ 751 0232 B092 0000 		sts freq_f,r11
+ 243:main.c        **** 		f_toggle=0;
+ 753               	.LM62:
+ 754 0236 1092 0000 		sts f_toggle,__zero_reg__
+ 755               	.L22:
+ 248:main.c        **** 		c = getchar();
+ 757               	.LM63:
+ 758 023a 8091 0000 		lds r24,__iob
+ 759 023e 9091 0000 		lds r25,__iob+1
+ 760 0242 0E94 0000 		call fgetc
+ 249:main.c        **** 		}while(c!='#');
+ 762               	.LM64:
+ 763 0246 8332      		cpi r24,lo8(35)
+ 764 0248 01F4      		brne .L22
+ 251:main.c        **** 		nrk_led_set(GREEN_LED);
+ 766               	.LM65:
+ 767 024a 81E0      		ldi r24,lo8(1)
+ 768 024c 90E0      		ldi r25,hi8(1)
+ 769               	.L61:
+ 770 024e 0E94 0000 		call nrk_led_set
+ 241:main.c        **** 		index=0;
+ 772               	.LM66:
+ 773 0252 00E0      		ldi r16,lo8(0)
+ 774               	.L57:
+ 254:main.c        **** 		c=getchar();
+ 776               	.LM67:
+ 777 0254 8091 0000 		lds r24,__iob
+ 778 0258 9091 0000 		lds r25,__iob+1
+ 779 025c 0E94 0000 		call fgetc
+ 780 0260 282F      		mov r18,r24
+ 255:main.c        **** 		if(index==MSG_BUF_SIZE && c=='z' ) ready=1;//changed '\r' tp 'z'
+ 782               	.LM68:
+ 783 0262 0330      		cpi r16,lo8(3)
+ 784 0264 01F4      		brne .L24
+ 255:main.c        **** 		if(index==MSG_BUF_SIZE && c=='z' ) ready=1;//changed '\r' tp 'z'
+ 786               	.LM69:
+ 787 0266 8A37      		cpi r24,lo8(122)
+ 788 0268 01F0      		breq .L46
+ 789               	.L24:
+ 256:main.c        **** 		else msg_buf[index]=c;	
+ 791               	.LM70:
+ 792 026a E02F      		mov r30,r16
+ 793 026c F0E0      		ldi r31,lo8(0)
+ 794 026e E050      		subi r30,lo8(-(msg_buf))
+ 795 0270 F040      		sbci r31,hi8(-(msg_buf))
+ 796 0272 2083      		st Z,r18
+ 257:main.c        **** 		if(index<MSG_BUF_SIZE) index++;
+ 798               	.LM71:
+ 799 0274 0330      		cpi r16,lo8(3)
+ 800 0276 00F4      		brsh .L47
+ 257:main.c        **** 		if(index<MSG_BUF_SIZE) index++;
+ 802               	.LM72:
+ 803 0278 0F5F      		subi r16,lo8(-(1))
+ 804 027a 10E0      		ldi r17,lo8(0)
+ 805 027c 00C0      		rjmp .L26
+ 806               	.L46:
+ 255:main.c        **** 		if(index==MSG_BUF_SIZE && c=='z' ) ready=1;//changed '\r' tp 'z'
+ 808               	.LM73:
+ 809 027e 11E0      		ldi r17,lo8(1)
+ 810 0280 00C0      		rjmp .L25
+ 811               	.L47:
+ 257:main.c        **** 		if(index<MSG_BUF_SIZE) index++;
+ 813               	.LM74:
+ 814 0282 10E0      		ldi r17,lo8(0)
+ 815               	.L25:
+ 258:main.c        **** 		else  { index=0; nrk_led_set(RED_LED); }
+ 817               	.LM75:
+ 818 0284 80E0      		ldi r24,lo8(0)
+ 819 0286 90E0      		ldi r25,hi8(0)
+ 820 0288 2983      		std Y+1,r18
+ 821 028a 0E94 0000 		call nrk_led_set
+ 822 028e 00E0      		ldi r16,lo8(0)
+ 823 0290 2981      		ldd r18,Y+1
+ 824               	.L26:
+ 259:main.c        **** 		if(c=='z' && ready==0) { index=0; nrk_led_set(RED_LED);  }
+ 826               	.LM76:
+ 827 0292 2A37      		cpi r18,lo8(122)
+ 828 0294 01F4      		brne .L27
+ 259:main.c        **** 		if(c=='z' && ready==0) { index=0; nrk_led_set(RED_LED);  }
+ 830               	.LM77:
+ 831 0296 1123      		tst r17
+ 832 0298 01F4      		brne .L28
+ 833 029a 80E0      		ldi r24,lo8(0)
+ 834 029c 90E0      		ldi r25,hi8(0)
+ 835 029e 00C0      		rjmp .L61
+ 836               	.L27:
+ 260:main.c        **** 		} while(!ready);
+ 838               	.LM78:
+ 839 02a0 1123      		tst r17
+ 840 02a2 01F0      		breq .L57
+ 841               	.L28:
+ 261:main.c        **** 		nrk_led_clr(RED_LED);
+ 843               	.LM79:
+ 844 02a4 80E0      		ldi r24,lo8(0)
+ 845 02a6 90E0      		ldi r25,hi8(0)
+ 846 02a8 0E94 0000 		call nrk_led_clr
+ 262:main.c        **** 		nrk_led_clr(GREEN_LED);
+ 848               	.LM80:
+ 849 02ac 81E0      		ldi r24,lo8(1)
+ 850 02ae 90E0      		ldi r25,hi8(1)
+ 851 02b0 0E94 0000 		call nrk_led_clr
+ 282:main.c        **** 		led_active=1;		
+ 853               	.LM81:
+ 854 02b4 A092 0000 		sts led_active,r10
+ 283:main.c        **** 		nrk_led_toggle(BLUE_LED);
+ 856               	.LM82:
+ 857 02b8 83E0      		ldi r24,lo8(3)
+ 858 02ba 90E0      		ldi r25,hi8(3)
+ 859 02bc 0E94 0000 		call nrk_led_toggle
+ 292:main.c        **** 		if(msg_buf[0]==200)	//To keep the light ON constant for 30 seconds, just send decimal 200 in the 
+ 861               	.LM83:
+ 862 02c0 8091 0000 		lds r24,msg_buf
+ 863 02c4 883C      		cpi r24,lo8(-56)
+ 864 02c6 01F4      		brne .L30
+ 295:main.c        **** 			freq_f = f_low; //We want the light ON at constant luminosity. Duty cycle matching has been done
+ 866               	.LM84:
+ 867 02c8 C092 0000 		sts freq_f,r12
+ 868 02cc 18EC      		ldi r17,lo8(-56)
+ 869               	.L31:
+ 299:main.c        **** 			for(k=0; k<200; k++ ) spin_wait_ms(100);
+ 871               	.LM85:
+ 872 02ce 84E6      		ldi r24,lo8(100)
+ 873 02d0 90E0      		ldi r25,hi8(100)
+ 874 02d2 0E94 0000 		call spin_wait_ms
+ 875 02d6 1150      		subi r17,lo8(-(-1))
+ 876 02d8 01F4      		brne .L31
+ 877 02da 00C0      		rjmp .L58
+ 878               	.L30:
+ 292:main.c        **** 		if(msg_buf[0]==200)	//To keep the light ON constant for 30 seconds, just send decimal 200 in the 
+ 880               	.LM86:
+ 881 02dc 07E0      		ldi r16,lo8(7)
+ 882 02de 10E0      		ldi r17,hi8(7)
+ 883 02e0 DD24      		clr r13
+ 884               	.L45:
+ 307:main.c        **** 				switch(bcnt)
+ 886               	.LM87:
+ 887 02e2 DD20      		tst r13
+ 888 02e4 01F0      		breq .L34
+ 889 02e6 BD2D      		mov r27,r13
+ 890 02e8 B130      		cpi r27,lo8(1)
+ 891 02ea 01F4      		brne .L59
+ 892 02ec 00C0      		rjmp .L62
+ 893               	.L34:
+ 311:main.c        **** 					freq_f=2;
+ 895               	.LM88:
+ 896 02ee 7092 0000 		sts freq_f,r7
+ 897 02f2 00C0      		rjmp .L36
+ 898               	.L62:
+ 314:main.c        **** 					freq_f=f_low;
+ 900               	.LM89:
+ 901 02f4 C092 0000 		sts freq_f,r12
+ 902 02f8 00C0      		rjmp .L37
+ 903               	.L59:
+ 318:main.c        **** 					bit = (tx_val>>(Nbits-1-bcnt))&0x01;//MSB first
+ 905               	.LM90:
+ 906 02fa C401      		movw r24,r8
+ 907 02fc 002E      		mov r0,r16
+ 908 02fe 00C0      		rjmp 2f
+ 909 0300 9595      	1:	asr r25
+ 910 0302 8795      		ror r24
+ 911 0304 0A94      	2:	dec r0
+ 912 0306 02F4      		brpl 1b
+ 319:main.c        **** 					if(bit==1)
+ 914               	.LM91:
+ 915 0308 80FF      		sbrs r24,0
+ 916 030a 00C0      		rjmp .L38
+ 320:main.c        **** 						freq_f = f_low;
+ 918               	.LM92:
+ 919 030c C092 0000 		sts freq_f,r12
+ 920 0310 00C0      		rjmp .L39
+ 921               	.L38:
+ 322:main.c        **** 						freq_f = f_high;
+ 923               	.LM93:
+ 924 0312 B092 0000 		sts freq_f,r11
+ 925               	.L39:
+ 329:main.c        **** 				if(bcnt == 0)	//Let sync preamble length remain 1 symbol - so that preamble peak is clear
+ 927               	.LM94:
+ 928 0316 DD20      		tst r13
+ 929 0318 01F0      		breq .L36
+ 930               	.L37:
+ 333:main.c        **** 						for(loop2=0;loop2<13;loop2++)
+ 932               	.LM95:
+ 933 031a 3DE0      		ldi r19,lo8(13)
+ 934 031c E32E      		mov r14,r19
+ 935 031e F12C      		mov r15,__zero_reg__
+ 936 0320 00C0      		rjmp .L40
+ 937               	.L36:
+ 292:main.c        **** 		if(msg_buf[0]==200)	//To keep the light ON constant for 30 seconds, just send decimal 200 in the 
+ 939               	.LM96:
+ 940 0322 2DE0      		ldi r18,lo8(13)
+ 941 0324 E22E      		mov r14,r18
+ 942 0326 F12C      		mov r15,__zero_reg__
+ 943               	.L41:
+ 945               	.LM97:
+ 946 0328 00D0      		rcall .
+ 947 032a EDB7      		in r30,__SP_L__
+ 948 032c FEB7      		in r31,__SP_H__
+ 949 032e 5282      		std Z+2,r5
+ 950 0330 4182      		std Z+1,r4
+ 951 0332 0E94 0000 		call printf
+ 952 0336 0894      		sec
+ 953 0338 E108      		sbc r14,__zero_reg__
+ 954 033a F108      		sbc r15,__zero_reg__
+ 333:main.c        **** 						for(loop2=0;loop2<13;loop2++)
+ 956               	.LM98:
+ 957 033c 0F90      		pop __tmp_reg__
+ 958 033e 0F90      		pop __tmp_reg__
+ 959 0340 E114      		cp r14,__zero_reg__
+ 960 0342 F104      		cpc r15,__zero_reg__
+ 961 0344 01F4      		brne .L41
+ 962 0346 9DE0      		ldi r25,lo8(13)
+ 963 0348 E92E      		mov r14,r25
+ 964 034a F12C      		mov r15,__zero_reg__
+ 965               	.L42:
+ 335:main.c        **** 						for(loop2=0;loop2<13;loop2++)
+ 336:main.c        **** 						printf("\r\nDummy printf for delay!!!!!!!!");//nrk_led_clr(ORANGE_LED);
+ 967               	.LM99:
+ 968 034c 00D0      		rcall .
+ 969 034e ADB7      		in r26,__SP_L__
+ 970 0350 BEB7      		in r27,__SP_H__
+ 971 0352 1296      		adiw r26,1+1
+ 972 0354 5C92      		st X,r5
+ 973 0356 4E92      		st -X,r4
+ 974 0358 1197      		sbiw r26,1
+ 975 035a 0E94 0000 		call printf
+ 976 035e 0894      		sec
+ 977 0360 E108      		sbc r14,__zero_reg__
+ 978 0362 F108      		sbc r15,__zero_reg__
+ 335:main.c        **** 						for(loop2=0;loop2<13;loop2++)
+ 980               	.LM100:
+ 981 0364 0F90      		pop __tmp_reg__
+ 982 0366 0F90      		pop __tmp_reg__
+ 983 0368 E114      		cp r14,__zero_reg__
+ 984 036a F104      		cpc r15,__zero_reg__
+ 985 036c 01F4      		brne .L42
+ 986 036e 00C0      		rjmp .L43
+ 987               	.L40:
+ 337:main.c        **** 						
+ 338:main.c        **** 				}	
+ 339:main.c        **** 				else		//Vary the symbol length. Set to 33 for symvol length = 1 frame length
+ 340:main.c        **** 				{	
+ 341:main.c        **** 				//		spin_wait_ms(SYMBOL_LEN);	
+ 342:main.c        **** 						//delay of 33ms								
+ 343:main.c        **** 						for(loop2=0;loop2<13;loop2++)
+ 344:main.c        **** 						printf("\r\nDummy printf for delay!!!!!!!!");//nrk_led_set(ORANGE_LED);
+ 989               	.LM101:
+ 990 0370 00D0      		rcall .
+ 991 0372 EDB7      		in r30,__SP_L__
+ 992 0374 FEB7      		in r31,__SP_H__
+ 993 0376 5282      		std Z+2,r5
+ 994 0378 4182      		std Z+1,r4
+ 995 037a 0E94 0000 		call printf
+ 996 037e 0894      		sec
+ 997 0380 E108      		sbc r14,__zero_reg__
+ 998 0382 F108      		sbc r15,__zero_reg__
+ 343:main.c        **** 						for(loop2=0;loop2<13;loop2++)
+ 1000               	.LM102:
+ 1001 0384 0F90      		pop __tmp_reg__
+ 1002 0386 0F90      		pop __tmp_reg__
+ 1003 0388 E114      		cp r14,__zero_reg__
+ 1004 038a F104      		cpc r15,__zero_reg__
+ 1005 038c 01F4      		brne .L40
+ 1006 038e 8DE0      		ldi r24,lo8(13)
+ 1007 0390 E82E      		mov r14,r24
+ 1008 0392 F12C      		mov r15,__zero_reg__
+ 1009               	.L44:
+ 345:main.c        **** 						for(loop2=0;loop2<13;loop2++)
+ 346:main.c        **** 						printf("\r\nDummy printf for delay!!!!!!!!");//nrk_led_clr(ORANGE_LED);
+ 1011               	.LM103:
+ 1012 0394 00D0      		rcall .
+ 1013 0396 ADB7      		in r26,__SP_L__
+ 1014 0398 BEB7      		in r27,__SP_H__
+ 1015 039a 1296      		adiw r26,1+1
+ 1016 039c 5C92      		st X,r5
+ 1017 039e 4E92      		st -X,r4
+ 1018 03a0 1197      		sbiw r26,1
+ 1019 03a2 0E94 0000 		call printf
+ 1020 03a6 0894      		sec
+ 1021 03a8 E108      		sbc r14,__zero_reg__
+ 1022 03aa F108      		sbc r15,__zero_reg__
+ 345:main.c        **** 						for(loop2=0;loop2<13;loop2++)
+ 1024               	.LM104:
+ 1025 03ac 0F90      		pop __tmp_reg__
+ 1026 03ae 0F90      		pop __tmp_reg__
+ 1027 03b0 E114      		cp r14,__zero_reg__
+ 1028 03b2 F104      		cpc r15,__zero_reg__
+ 1029 03b4 01F4      		brne .L44
+ 1030               	.L43:
+ 304:main.c        **** 			for(bcnt=0; bcnt<Nbits; bcnt++ )
+ 1032               	.LM105:
+ 1033 03b6 D394      		inc r13
+ 1034 03b8 0150      		subi r16,lo8(-(-1))
+ 1035 03ba 1040      		sbci r17,hi8(-(-1))
+ 1036 03bc BD2D      		mov r27,r13
+ 1037 03be B830      		cpi r27,lo8(8)
+ 1038 03c0 01F0      		breq .+2
+ 1039 03c2 00C0      		rjmp .L45
+ 1040 03c4 00C0      		rjmp .L58
+ 1047               	.Lscope4:
+ 1049               		.stabd	78,0,0
+ 1051               	.global	nrk_create_taskset
+ 1053               	nrk_create_taskset:
+ 1054               		.stabd	46,0,0
+ 347:main.c        **** 				}	
+ 348:main.c        **** 			}
+ 349:main.c        **** 		}
+ 350:main.c        **** 		// After data is done, we can printf the values
+ 351:main.c        **** 		// This can't be before the data or it will impact timing...
+ 352:main.c        **** //		printf( "* f_low: %d f_high: %d value: %d\r\n",f_low,f_high,tx_val );
+ 353:main.c        **** 	}
+ 354:main.c        **** }
+ 355:main.c        **** 
+ 356:main.c        **** 
+ 357:main.c        **** /*
+ 358:main.c        **** void Task3()
+ 359:main.c        **** {
+ 360:main.c        **** uint16_t cnt;
+ 361:main.c        **** uint16_t i;
+ 362:main.c        ****   printf( "Task3 PID=%d\r\n",nrk_get_pid());
+ 363:main.c        ****   cnt=0;
+ 364:main.c        ****   while(1) {
+ 365:main.c        **** 	printf( "Task3 cnt=%d\r\n",cnt );
+ 366:main.c        **** 	nrk_wait_until_next_period();
+ 367:main.c        **** 	cnt++;
+ 368:main.c        **** 	}
+ 369:main.c        **** }*/
+ 370:main.c        **** 
+ 371:main.c        **** 
+ 372:main.c        **** 
+ 373:main.c        **** void
+ 374:main.c        **** nrk_create_taskset()
+ 375:main.c        **** {
+ 1056               	.LM106:
+ 1057               	.LFBB5:
+ 1058               	/* prologue: function */
+ 1059               	/* frame size = 0 */
+ 1060               	/* stack size = 0 */
+ 1061               	.L__stack_usage = 0
+ 376:main.c        **** /*  TaskOne.task = Task1;
+ 377:main.c        ****   TaskOne.Ptos = (void *) &Stack1[NRK_APP_STACKSIZE];
+ 378:main.c        ****   TaskOne.Pbos = (void *) &Stack1[0];
+ 379:main.c        ****   TaskOne.prio = 1;
+ 380:main.c        ****   TaskOne.FirstActivation = TRUE;
+ 381:main.c        ****   TaskOne.Type = BASIC_TASK;
+ 382:main.c        ****   TaskOne.SchType = PREEMPTIVE;
+ 383:main.c        ****   TaskOne.period.secs = 0;
+ 384:main.c        ****   TaskOne.period.nano_secs = 250*NANOS_PER_MS;//250
+ 385:main.c        ****   TaskOne.cpu_reserve.secs = 0;
+ 386:main.c        ****   TaskOne.cpu_reserve.nano_secs = 50*NANOS_PER_MS;//50
+ 387:main.c        ****   TaskOne.offset.secs = 0;
+ 388:main.c        ****   TaskOne.offset.nano_secs= 0;
+ 389:main.c        ****   nrk_activate_task (&TaskOne);
+ 390:main.c        **** */
+ 391:main.c        ****   TaskTwo.task = Task2;
+ 1063               	.LM107:
+ 1064 03c6 80E0      		ldi r24,lo8(gs(Task2))
+ 1065 03c8 90E0      		ldi r25,hi8(gs(Task2))
+ 1066 03ca 9093 0000 		sts TaskTwo+5+1,r25
+ 1067 03ce 8093 0000 		sts TaskTwo+5,r24
+ 392:main.c        ****   TaskTwo.Ptos = (void *) &Stack2[NRK_APP_STACKSIZE];
+ 1069               	.LM108:
+ 1070 03d2 80E0      		ldi r24,lo8(Stack2+256)
+ 1071 03d4 90E0      		ldi r25,hi8(Stack2+256)
+ 1072 03d6 9093 0000 		sts TaskTwo+1+1,r25
+ 1073 03da 8093 0000 		sts TaskTwo+1,r24
+ 393:main.c        ****   TaskTwo.Pbos = (void *) &Stack2[0];
+ 1075               	.LM109:
+ 1076 03de 80E0      		ldi r24,lo8(Stack2)
+ 1077 03e0 90E0      		ldi r25,hi8(Stack2)
+ 1078 03e2 9093 0000 		sts TaskTwo+3+1,r25
+ 1079 03e6 8093 0000 		sts TaskTwo+3,r24
+ 394:main.c        ****   TaskTwo.prio = 2;
+ 1081               	.LM110:
+ 1082 03ea 82E0      		ldi r24,lo8(2)
+ 1083 03ec 8093 0000 		sts TaskTwo+8,r24
+ 395:main.c        ****   TaskTwo.FirstActivation = TRUE;
+ 1085               	.LM111:
+ 1086 03f0 81E0      		ldi r24,lo8(1)
+ 1087 03f2 8093 0000 		sts TaskTwo+7,r24
+ 396:main.c        ****   TaskTwo.Type = BASIC_TASK;
+ 1089               	.LM112:
+ 1090 03f6 8093 0000 		sts TaskTwo+9,r24
+ 397:main.c        ****   TaskTwo.SchType = PREEMPTIVE;
+ 1092               	.LM113:
+ 1093 03fa 8093 0000 		sts TaskTwo+10,r24
+ 398:main.c        ****   TaskTwo.period.secs = 0;
+ 1095               	.LM114:
+ 1096 03fe 1092 0000 		sts TaskTwo+11,__zero_reg__
+ 1097 0402 1092 0000 		sts TaskTwo+11+1,__zero_reg__
+ 1098 0406 1092 0000 		sts TaskTwo+11+2,__zero_reg__
+ 1099 040a 1092 0000 		sts TaskTwo+11+3,__zero_reg__
+ 399:main.c        ****   //TaskTwo.period.nano_secs = 0;//*NANOS_PER_MS;
+ 400:main.c        ****   TaskTwo.period.nano_secs = 0;//67
+ 1101               	.LM115:
+ 1102 040e 1092 0000 		sts TaskTwo+15,__zero_reg__
+ 1103 0412 1092 0000 		sts TaskTwo+15+1,__zero_reg__
+ 1104 0416 1092 0000 		sts TaskTwo+15+2,__zero_reg__
+ 1105 041a 1092 0000 		sts TaskTwo+15+3,__zero_reg__
+ 401:main.c        ****   // Disable reserves
+ 402:main.c        ****   TaskTwo.cpu_reserve.secs = 0;
+ 1107               	.LM116:
+ 1108 041e 1092 0000 		sts TaskTwo+19,__zero_reg__
+ 1109 0422 1092 0000 		sts TaskTwo+19+1,__zero_reg__
+ 1110 0426 1092 0000 		sts TaskTwo+19+2,__zero_reg__
+ 1111 042a 1092 0000 		sts TaskTwo+19+3,__zero_reg__
+ 403:main.c        ****   TaskTwo.cpu_reserve.nano_secs = 0;
+ 1113               	.LM117:
+ 1114 042e 1092 0000 		sts TaskTwo+23,__zero_reg__
+ 1115 0432 1092 0000 		sts TaskTwo+23+1,__zero_reg__
+ 1116 0436 1092 0000 		sts TaskTwo+23+2,__zero_reg__
+ 1117 043a 1092 0000 		sts TaskTwo+23+3,__zero_reg__
+ 404:main.c        ****   TaskTwo.offset.secs = 0;
+ 1119               	.LM118:
+ 1120 043e 1092 0000 		sts TaskTwo+27,__zero_reg__
+ 1121 0442 1092 0000 		sts TaskTwo+27+1,__zero_reg__
+ 1122 0446 1092 0000 		sts TaskTwo+27+2,__zero_reg__
+ 1123 044a 1092 0000 		sts TaskTwo+27+3,__zero_reg__
+ 405:main.c        ****   TaskTwo.offset.nano_secs= 0;
+ 1125               	.LM119:
+ 1126 044e 1092 0000 		sts TaskTwo+31,__zero_reg__
+ 1127 0452 1092 0000 		sts TaskTwo+31+1,__zero_reg__
+ 1128 0456 1092 0000 		sts TaskTwo+31+2,__zero_reg__
+ 1129 045a 1092 0000 		sts TaskTwo+31+3,__zero_reg__
+ 406:main.c        ****   nrk_activate_task (&TaskTwo);
+ 1131               	.LM120:
+ 1132 045e 80E0      		ldi r24,lo8(TaskTwo)
+ 1133 0460 90E0      		ldi r25,hi8(TaskTwo)
+ 1134 0462 0E94 0000 		call nrk_activate_task
+ 1135               	/* epilogue start */
+ 407:main.c        **** /*
+ 408:main.c        **** 
+ 409:main.c        ****   TaskThree.task = Task3;
+ 410:main.c        ****   TaskThree.Ptos = (void *) &Stack3[NRK_APP_STACKSIZE];
+ 411:main.c        ****   TaskThree.Pbos = (void *) &Stack3[0];
+ 412:main.c        ****   TaskThree.prio = 3;
+ 413:main.c        ****   TaskThree.FirstActivation = TRUE;
+ 414:main.c        ****   TaskThree.Type = BASIC_TASK;
+ 415:main.c        ****   TaskThree.SchType = PREEMPTIVE;
+ 416:main.c        ****   TaskThree.period.secs = 1;
+ 417:main.c        ****   TaskThree.period.nano_secs = 0;
+ 418:main.c        ****   TaskThree.cpu_reserve.secs = 0;
+ 419:main.c        ****   TaskThree.cpu_reserve.nano_secs = 100*NANOS_PER_MS;
+ 420:main.c        ****   TaskThree.offset.secs = 0;
+ 421:main.c        ****   TaskThree.offset.nano_secs= 0;
+ 422:main.c        ****   nrk_activate_task (&TaskThree);*/
+ 423:main.c        **** 
+ 424:main.c        **** 
+ 425:main.c        **** 
+ 426:main.c        **** 
+ 427:main.c        **** }
+ 1137               	.LM121:
+ 1138 0466 0895      		ret
+ 1140               	.Lscope5:
+ 1142               		.stabd	78,0,0
+ 1144               	.global	main
+ 1146               	main:
+ 1147               		.stabd	46,0,0
+  73:main.c        **** {
+ 1149               	.LM122:
+ 1150               	.LFBB6:
+ 1151               	/* prologue: function */
+ 1152               	/* frame size = 0 */
+ 1153               	/* stack size = 0 */
+ 1154               	.L__stack_usage = 0
+  76:main.c        ****   nrk_setup_ports();
+ 1156               	.LM123:
+ 1157 0468 0E94 0000 		call nrk_setup_ports
+  77:main.c        ****   nrk_setup_uart(UART_BAUDRATE_115K2);
+ 1159               	.LM124:
+ 1160 046c 80E1      		ldi r24,lo8(16)
+ 1161 046e 90E0      		ldi r25,hi8(16)
+ 1162 0470 0E94 0000 		call nrk_setup_uart
+  79:main.c        ****   DDRF = 0xff;
+ 1164               	.LM125:
+ 1165 0474 8FEF      		ldi r24,lo8(-1)
+ 1166 0476 80BB      		out 48-32,r24
+  80:main.c        ****   DDRB = 0xff;	
+ 1168               	.LM126:
+ 1169 0478 84B9      		out 36-32,r24
+  81:main.c        ****   nrk_kprintf( PSTR("Starting up...\r\n") );
+ 1171               	.LM127:
+ 1172 047a 80E0      		ldi r24,lo8(__c.2834)
+ 1173 047c 90E0      		ldi r25,hi8(__c.2834)
+ 1174 047e 0E94 0000 		call nrk_kprintf
+  83:main.c        ****   Task2();
+ 1176               	.LM128:
+ 1177 0482 0E94 0000 		call Task2
+  85:main.c        ****   nrk_init();
+ 1179               	.LM129:
+ 1180 0486 0E94 0000 		call nrk_init
+  88:main.c        ****   nrk_time_set(0,0);
+ 1182               	.LM130:
+ 1183 048a 60E0      		ldi r22,lo8(0)
+ 1184 048c 70E0      		ldi r23,hi8(0)
+ 1185 048e CB01      		movw r24,r22
+ 1186 0490 20E0      		ldi r18,lo8(0)
+ 1187 0492 30E0      		ldi r19,hi8(0)
+ 1188 0494 A901      		movw r20,r18
+ 1189 0496 0E94 0000 		call nrk_time_set
+  89:main.c        ****   nrk_create_taskset ();
+ 1191               	.LM131:
+ 1192 049a 0E94 0000 		call nrk_create_taskset
+  90:main.c        ****   nrk_start();
+ 1194               	.LM132:
+ 1195 049e 0E94 0000 		call nrk_start
+  92:main.c        **** }
+ 1197               	.LM133:
+ 1198 04a2 80E0      		ldi r24,lo8(0)
+ 1199 04a4 90E0      		ldi r25,hi8(0)
+ 1200               	/* epilogue start */
+ 1201 04a6 0895      		ret
+ 1203               	.Lscope6:
+ 1205               		.stabd	78,0,0
+ 1206               	.global	f_toggle
+ 1207               	.global	f_toggle
+ 1208               		.section .bss
+ 1211               	f_toggle:
+ 1212 0000 00        		.skip 1,0
+ 1213               	.global	freq_f
+ 1214               	.global	freq_f
+ 1217               	freq_f:
+ 1218 0001 00        		.skip 1,0
+ 1219               		.comm _nrk_signal_list,4,1
+ 1220               		.comm nrk_idle_task_stk,256,1
+ 1221               		.comm nrk_kernel_stk_ptr,2,1
+ 1222               		.comm error_task,1,1
+ 1223               		.comm error_num,1,1
+ 1224               		.comm _nrk_prev_timer_val,1,1
+ 1225               		.comm _nrk_time_trigger,1,1
+ 1226               		.comm app_timer0_callback,2,1
+ 1227               		.comm app_timer0_prescale,1,1
+ 1228               		.comm msg_buf,3,1
+ 1229               		.comm uart_rx_signal,1,1
+ 1230               		.comm sm,4,1
+ 1231               		.comm Stack1,256,1
+ 1232               		.comm TaskOne,35,1
+ 1233               		.comm Stack2,256,1
+ 1234               		.comm TaskTwo,35,1
+ 1235               		.comm compare_vt,2,1
+ 1236               		.comm led_active,1,1
+ 1237               		.section	.progmem.data,"a",@progbits
+ 1240               	__c.2881:
+ 1241 0000 4572 726F 		.string	"Error setting up timer callback\r\n"
+ 1241      7220 7365 
+ 1241      7474 696E 
+ 1241      6720 7570 
+ 1241      2074 696D 
+ 1244               	__c.2879:
+ 1245 0022 4361 6C6C 		.string	"Callback timer setup\r\n"
+ 1245      6261 636B 
+ 1245      2074 696D 
+ 1245      6572 2073 
+ 1245      6574 7570 
+ 1248               	__c.2834:
+ 1249 0039 5374 6172 		.string	"Starting up...\r\n"
+ 1249      7469 6E67 
+ 1249      2075 702E 
+ 1249      2E2E 0D0A 
+ 1249      00
+ 1270               		.text
+ 1272               	.Letext0:
+ 1273               	.global __do_copy_data
+ 1274               	.global __do_clear_bss
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 main.c
+     /tmp/ccpASKtm.s:2      *ABS*:000000000000003f __SREG__
+     /tmp/ccpASKtm.s:3      *ABS*:000000000000003e __SP_H__
+     /tmp/ccpASKtm.s:4      *ABS*:000000000000003d __SP_L__
+     /tmp/ccpASKtm.s:5      *ABS*:0000000000000034 __CCP__
+     /tmp/ccpASKtm.s:6      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccpASKtm.s:7      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccpASKtm.s:301    .text:0000000000000000 my_timer_callback
+     /tmp/ccpASKtm.s:1217   .bss:0000000000000001 freq_f
+                            *COM*:0000000000000002 compare_vt
+     /tmp/ccpASKtm.s:399    .text:0000000000000068 Task1
+     /tmp/ccpASKtm.s:465    .text:00000000000000c4 spin_wait_ms
+     /tmp/ccpASKtm.s:565    .text:0000000000000126 Task2
+     /tmp/ccpASKtm.s:1244   .progmem.data:0000000000000022 __c.2879
+     /tmp/ccpASKtm.s:1240   .progmem.data:0000000000000000 __c.2881
+     /tmp/ccpASKtm.s:1211   .bss:0000000000000000 f_toggle
+                            *COM*:0000000000000003 msg_buf
+                            *COM*:0000000000000001 led_active
+     /tmp/ccpASKtm.s:1053   .text:00000000000003c6 nrk_create_taskset
+                            *COM*:0000000000000023 TaskTwo
+                            *COM*:0000000000000100 Stack2
+     /tmp/ccpASKtm.s:1146   .text:0000000000000468 main
+     /tmp/ccpASKtm.s:1248   .progmem.data:0000000000000039 __c.2834
+                            *COM*:0000000000000004 _nrk_signal_list
+                            *COM*:0000000000000100 nrk_idle_task_stk
+                            *COM*:0000000000000002 nrk_kernel_stk_ptr
+                            *COM*:0000000000000001 error_task
+                            *COM*:0000000000000001 error_num
+                            *COM*:0000000000000001 _nrk_prev_timer_val
+                            *COM*:0000000000000001 _nrk_time_trigger
+                            *COM*:0000000000000002 app_timer0_callback
+                            *COM*:0000000000000001 app_timer0_prescale
+                            *COM*:0000000000000001 uart_rx_signal
+                            *COM*:0000000000000004 sm
+                            *COM*:0000000000000100 Stack1
+                            *COM*:0000000000000023 TaskOne
+
+UNDEFINED SYMBOLS
+nrk_led_clr
+printf
+nrk_get_pid
+nrk_wait_until_next_period
+nrk_spin_wait_us
+_nrk_os_timer_stop
+nrk_int_enable
+nrk_timer_int_configure
+nrk_kprintf
+nrk_timer_int_reset
+nrk_timer_int_start
+__iob
+fgetc
+nrk_led_set
+nrk_led_toggle
+nrk_activate_task
+nrk_setup_ports
+nrk_setup_uart
+nrk_init
+nrk_time_set
+nrk_start
+__do_copy_data
+__do_clear_bss

@@ -1,0 +1,5 @@
+avrdude -b115200 -F -p atmega128 -P usb -c avrispmkII -V -U lfuse:w:0xE6:m -v
+avrdude -b115200 -F -p atmega128 -P usb -c avrispmkII -V -U hfuse:w:0xD2:m -v
+avrdude -b115200 -F -p atmega128 -P usb -c avrispmkII -V -U efuse:w:0xFC:m -v
+avrdude -b115200 -F -p atmega128 -P usb -c avrispmkII -V -U flash:w:main.hex
+echo "Setup for Power Plug Meter. EEPROM will clear on flashing"

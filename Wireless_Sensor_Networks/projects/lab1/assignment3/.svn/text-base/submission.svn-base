@@ -1,0 +1,29 @@
+1. Code with the changed priorities. 
+2. text file with the explaination of the difference in the values
+
+Case1: 
+	Priority	Worst Case Execution Time
+--------------------------------------------------
+Task1	1		601562808 ns
+Task2	2		299804841 ns
+
+Case2: 
+	Priority	Worst Case Execution Time
+--------------------------------------------------
+Task1	2		601562808 ns
+Task2	1		298828278 ns
+
+When Task2 was higher priority in Case1 we saw that whenever it was released it was immedietely allowed to run as it was the highest priority task. Hence the worst case execution time was equal to the computation time of the task. 
+Where as for Task1 when it was lower priority the worst case happens when both Task1 and Task2 were released together and Task1 has to wait for the entire Task2 to be completed. 
+
+The computation done by Task1 and Task2 is the same. So when The priorities were inverted what happened was that the Task which had a lower piority has to wait for the whole of the other task to complete. Hence the worst case execution times are exchanged when the priorites are exchanged and this is what we see in the values. The Task with the higher priority manages to complete in about 300000000 ns and the task with the lower priority manages to complete in about 600000000 ns. 
+
+3. Bonus 1: tighter bound of the tasks and explaination of how it was obtained.
+
+A tight bound can be set to the worst case execution time of the task. This tight bound is set to 300000000 ns. This was obtained by the followming method: 
+1. Running only task1 in the system and logging the completion times of the task for 300 samples. 
+2. Running only task2 in the system and logging the completion times of the task for 300 samples. 
+3. Writing a script to find out the worst case execution time of each of these tasks. 
+4. The worst case execution time is less than the period and is equal to 300000000 ns.  
+
+4. Bonus 2: plotting the graphs of task1 and task2 with 30 data points. 

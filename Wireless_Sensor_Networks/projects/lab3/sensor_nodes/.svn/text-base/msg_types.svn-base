@@ -1,0 +1,39 @@
+Directed msg: 
+ACK - discover ack
+<dest mac>:<sender mac>:AD // discover ack
+
+Discover 
+0:<Sender MAC>:DM
+
+Data msg peer to node
+<Dest MAC>:<origin mac>:DM:<data seq num>:<Sample value> // data message
+
+
+Ack for update rate 
+<Dest MAC>:<origin mac>:UA // update ack
+
+Ack for sampling 
+<Dest MAC>:<origin MAC>:SA // sampling ack
+
+Flood - 
+data ack - BS to peer
+sprintf(rx_buf,"-1:2:17:DA:1:34,2:33,3:33,4:34");
+
+neighbour list - peer to BS 
+sprintf(rx_buf,"-1:2:13:NL:1,2,3,4");
+
+data_flood
+"-1:1:12:FD:12"
+<-1><mac of BS><Flood seqNUM>:FD:<data sample number>
+
+routing table - BS to peer 
+
+update rate - BS to peer  
+sprintf(rx_buf,"-1:2:15:UR:43");
+
+sampling rate - BS to peer
+sprintf(rx_buf,"-1:2:16:SR:10");
+
+nl transmit rate
+rebirth problem
+how to manage nodes going down

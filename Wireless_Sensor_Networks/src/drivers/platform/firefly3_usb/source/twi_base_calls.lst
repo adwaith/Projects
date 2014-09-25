@@ -1,0 +1,1108 @@
+   1               		.file	"twi_base_calls.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__RAMPZ__ = 0x3b
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  10               		.text
+  11               	.Ltext0:
+ 297               	.global	set_i2c_device
+ 299               	set_i2c_device:
+ 300               		.stabd	46,0,0
+   1:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+   2:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * ----------------------------------------------------------------------------
+   3:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * "THE BEER-WARE LICENSE" (Revision 42):
+   4:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * <joerg@FreeBSD.ORG> wrote this file.  As long as you retain this notice you
+   5:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * can do whatever you want with this stuff. If we meet some day, and you think
+   6:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * this stuff is worth it, you can buy me a beer in return.        Joerg Wunsch
+   7:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * ----------------------------------------------------------------------------
+   8:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+   9:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+  10:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * ----------------------------------------------------------------------------
+  11:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Updated to handle larger devices having 16-bit addresses
+  12:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  *                                                 (2007-09-05) Ruwan Jayanetti
+  13:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * ----------------------------------------------------------------------------
+  14:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+  15:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  16:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <nrk.h>
+  17:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <include.h>
+  18:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <ulib.h>
+  19:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <stdio.h>
+  20:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <hal.h>
+  21:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <nrk_error.h>
+  22:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <nrk_timer.h>
+  23:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <nrk_stack_check.h>
+  24:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <nrk_stats.h>
+  25:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  26:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <inttypes.h>
+  27:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <stdio.h>
+  28:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <stdlib.h>
+  29:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  30:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <avr/io.h>
+  31:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <util/twi.h>		/* Note [1] */
+  32:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  33:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <math.h>
+  34:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #include <twi_base_calls.h>
+  35:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  36:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #define DEBUG 0
+  37:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  38:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+  39:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * System clock in Hz.
+  40:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+  41:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #define F_CPU 16000000UL	/* 16 MHz for the AtMega128RFA1 */
+  42:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  43:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+  44:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Compatibility defines.  This should work on ATmega8, ATmega16,
+  45:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * ATmega163, ATmega323 and ATmega128 (IOW: on all devices that
+  46:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * provide a builtin TWI interface).
+  47:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  *
+  48:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * On the 128, it defaults to USART 1.
+  49:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+  50:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #ifndef UCSRB
+  51:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** # ifdef UCSR1A		/* ATmega128 */
+  52:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #  define UCSRA UCSR1A
+  53:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #  define UCSRB UCSR1B
+  54:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #  define UBRR UBRR1L
+  55:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #  define UDR UDR1
+  56:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** # else /* ATmega8 */
+  57:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #  define UCSRA USR
+  58:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #  define UCSRB UCR
+  59:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** # endif
+  60:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #endif
+  61:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #ifndef UBRR
+  62:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #  define UBRR UBRRL
+  63:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #endif
+  64:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  65:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+  66:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Note [3]
+  67:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * TWI address for Bosch EEPROM:
+  68:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+  69:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** //#define TWI_SLA_24CXX	0xEE
+  70:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** //#define TWI_SLA_24CXX 0xA0
+  71:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  72:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  73:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  74:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+  75:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Maximal number of iterations to wait for a device to respond for a
+  76:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * selection.  Should be large enough to allow for a pending write to
+  77:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * complete, but low enough to properly abort an infinite loop in case
+  78:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * a slave is broken or not present at all.  With 100 kHz TWI clock,
+  79:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * transfering the start condition and SLA+R/W packet takes about 10
+  80:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * µs.  The longest write period is supposed to not exceed ~ 10 ms.
+  81:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Thus, normal operation should not require more than 100 iterations
+  82:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * to get the device to respond to a selection.
+  83:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+  84:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #define MAX_ITER	100
+  85:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  86:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+  87:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Number of bytes that can be written in a row, see comments for
+  88:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * ee24xx_write_page() below.  Some vendor's devices would accept 16,
+  89:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * but 8 seems to be the lowest common denominator.
+  90:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  *
+  91:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Note that the page size must be a power of two, this simplifies the
+  92:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * page boundary calculations below.
+  93:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+  94:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #define PAGE_SIZE 8
+  95:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+  96:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+  97:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Saved TWI status register, for error messages only.  We need to
+  98:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * save it in a variable, since the datasheet only guarantees the TWSR
+  99:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * register to have valid contents while the TWINT bit in TWCR is set.
+ 100:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+ 101:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** uint8_t twst;
+ 102:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 103:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** uint8_t i2c_address; // The address of the slave node to write to
+ 104:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 105:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** void set_i2c_device(uint8_t address)
+ 106:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** {
+ 302               	.LM0:
+ 303               	.LFBB1:
+ 304               	/* prologue: function */
+ 305               	/* frame size = 0 */
+ 306               	/* stack size = 0 */
+ 307               	.L__stack_usage = 0
+ 107:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     i2c_address = address;
+ 309               	.LM1:
+ 310 0000 8093 0000 		sts i2c_address,r24
+ 311 0004 0895      		ret
+ 313               	.Lscope1:
+ 315               		.stabd	78,0,0
+ 317               	.global	init_i2c
+ 319               	init_i2c:
+ 320               		.stabd	46,0,0
+ 108:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** }
+ 109:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 110:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+ 111:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Do all the startup-time peripheral initializations: UART (for our
+ 112:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * debug/test output), and TWI clock.
+ 113:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  *
+ 114:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Formula for setting the SCL clock frequency is on page 383 of the ATmega128RFA1 datasheet
+ 115:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+ 116:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** void init_i2c(void)
+ 117:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** {
+ 322               	.LM2:
+ 323               	.LFBB2:
+ 324               	/* prologue: function */
+ 325               	/* frame size = 0 */
+ 326               	/* stack size = 0 */
+ 327               	.L__stack_usage = 0
+ 118:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 119:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   // Set up the SCL frequency
+ 120:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   // To operate at a clock frequency of 1 MHz, set TWBR and TWPS to 0
+ 121:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   // TODO: Generalize later
+ 122:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWBR = 0x02; // TWI Bit Rate Register
+ 329               	.LM3:
+ 330 0006 82E0      		ldi r24,lo8(2)
+ 331 0008 8093 B800 		sts 184,r24
+ 123:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWSR = 0x00; // TWPS is the value of the prescaler in the TWI status register (the 2 LSB)
+ 333               	.LM4:
+ 334 000c 1092 B900 		sts 185,__zero_reg__
+ 124:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 125:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   // Enable the SCL/SDA
+ 126:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   PRR0 = PRR0 & 0x7F; // Set the MSB in PRRO to 0 (see page 378)
+ 336               	.LM5:
+ 337 0010 E4E6      		ldi r30,lo8(100)
+ 338 0012 F0E0      		ldi r31,0
+ 339 0014 8081      		ld r24,Z
+ 340 0016 8F77      		andi r24,lo8(127)
+ 341 0018 8083      		st Z,r24
+ 127:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = TWCR | 0x04; // Set the TWEN bit in the TWCR (see page 196)
+ 343               	.LM6:
+ 344 001a ECEB      		ldi r30,lo8(-68)
+ 345 001c F0E0      		ldi r31,0
+ 346 001e 8081      		ld r24,Z
+ 347 0020 8460      		ori r24,lo8(4)
+ 348 0022 8083      		st Z,r24
+ 349 0024 0895      		ret
+ 351               	.Lscope2:
+ 353               		.stabd	78,0,0
+ 355               	.global	close_i2c
+ 357               	close_i2c:
+ 358               		.stabd	46,0,0
+ 128:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 129:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** }
+ 130:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 131:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** void close_i2c(void)
+ 132:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** {
+ 360               	.LM7:
+ 361               	.LFBB3:
+ 362               	/* prologue: function */
+ 363               	/* frame size = 0 */
+ 364               	/* stack size = 0 */
+ 365               	.L__stack_usage = 0
+ 133:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****    PRR0 = PRR0 & 0xFF; // Set the MSB in PRRO to 1 (see page 378)
+ 367               	.LM8:
+ 368 0026 E4E6      		ldi r30,lo8(100)
+ 369 0028 F0E0      		ldi r31,0
+ 370 002a 8081      		ld r24,Z
+ 371 002c 8083      		st Z,r24
+ 134:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****    TWCR = TWCR & 0xFB; // Set the TWEN bit in the TWCR (see page 196)
+ 373               	.LM9:
+ 374 002e ECEB      		ldi r30,lo8(-68)
+ 375 0030 F0E0      		ldi r31,0
+ 376 0032 8081      		ld r24,Z
+ 377 0034 8B7F      		andi r24,lo8(-5)
+ 378 0036 8083      		st Z,r24
+ 379 0038 0895      		ret
+ 381               	.Lscope3:
+ 383               		.stabd	78,0,0
+ 387               	.global	ee24xx_read_bytes
+ 389               	ee24xx_read_bytes:
+ 390               		.stabd	46,0,0
+ 135:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** }
+ 136:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 137:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+ 138:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Note [6]
+ 139:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Send character c down the UART Tx, wait until tx holding register
+ 140:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * is empty.
+ 141:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+ 142:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*int
+ 143:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** uart_putchar(char c, FILE *unused)
+ 144:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** {
+ 145:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 146:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     printf("uart_putchar with char %c", c);
+ 147:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 148:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   if (c == '\n')
+ 149:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     uart_putchar('\r', 0);
+ 150:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   loop_until_bit_is_set(UCSRA, UDRE0);
+ 151:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   UDR = c;
+ 152:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   return 0;
+ 153:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** }*/
+ 154:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 155:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+ 156:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Note [7]
+ 157:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  *
+ 158:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Read "len" bytes from EEPROM starting at "eeaddr" into "buf".
+ 159:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  *
+ 160:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * This requires two bus cycles: during the first cycle, the device
+ 161:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * will be selected (master transmitter mode), and the address
+ 162:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * transfered.  Address bits exceeding 256 are transfered in the
+ 163:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * E2/E1/E0 bits (subaddress bits) of the device selector.
+ 164:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  *
+ 165:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * The second bus cycle will reselect the device (repeated start
+ 166:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * condition, going into master receiver mode), and transfer the data
+ 167:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * from the device to the TWI master.  Multiple bytes can be
+ 168:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * transfered by ACKing the client's transfer.  The last transfer will
+ 169:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * be NACKed, which the client will take as an indication to not
+ 170:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * initiate further transfers.
+ 171:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+ 172:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** int
+ 173:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** ee24xx_read_bytes(uint16_t eeaddr, int len, uint8_t *buf)
+ 174:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** {
+ 392               	.LM10:
+ 393               	.LFBB4:
+ 394               	/* prologue: function */
+ 395               	/* frame size = 0 */
+ 396               	/* stack size = 0 */
+ 397               	.L__stack_usage = 0
+ 175:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 176:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 177:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   uint8_t sla, twcr, n = 0;
+ 178:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   int rv = 0;
+ 179:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 180:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /* patch high bits of EEPROM address into SLA */
+ 181:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   sla = i2c_address | (((eeaddr >> 8) & 0x07) << 1);
+ 399               	.LM11:
+ 400 003a 292F      		mov r18,r25
+ 401 003c 30E0      		ldi r19,0
+ 402 003e 2770      		andi r18,7
+ 403 0040 3327      		clr r19
+ 404 0042 220F      		lsl r18
+ 405 0044 9091 0000 		lds r25,i2c_address
+ 406 0048 292B      		or r18,r25
+ 407 004a 35E6      		ldi r19,lo8(101)
+ 182:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 183:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /*
+ 184:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****    * Note [8]
+ 185:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****    * First cycle: master transmitter mode
+ 186:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****    */
+ 187:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   restart:
+ 188:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   if (n++ >= MAX_ITER)
+ 189:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     return -1;
+ 190:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   begin:
+ 191:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 192:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN); /* send start condition */
+ 409               	.LM12:
+ 410 004c F4EA      		ldi r31,lo8(-92)
+ 193:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 194:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 195:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 196:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_REP_START:		/* OK, but should not happen */
+ 197:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_START:
+ 198:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       break;
+ 199:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 200:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_ARB_LOST:	/* Note [9] */
+ 201:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto begin;
+ 202:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 203:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     default:
+ 204:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       return -1;		/* error: not in start condition */
+ 205:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 				/* NB: do /not/ send stop condition */
+ 206:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 207:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 208:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /* Note [10] */
+ 209:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /* send SLA+W */
+ 210:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWDR = sla | TW_WRITE;
+ 211:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+ 412               	.LM13:
+ 413 004e E4E8      		ldi r30,lo8(-124)
+ 212:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 213:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 214:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 215:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_SLA_ACK:
+ 216:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       break;
+ 217:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 218:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_SLA_NACK:	/* nack during select: device busy writing */
+ 219:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 				/* Note [11] */
+ 220:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto restart;
+ 221:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 222:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_ARB_LOST:	/* re-arbitrate */
+ 223:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto begin;
+ 224:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 225:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     default:
+ 226:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto error;		/* must send stop condition */
+ 227:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 228:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 229:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWDR = eeaddr;		/* low 8 bits of addr */
+ 230:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+ 231:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 232:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 233:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 234:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_DATA_ACK:
+ 235:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       break;
+ 236:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 237:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_DATA_NACK:
+ 238:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto quit;
+ 239:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 240:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_ARB_LOST:
+ 241:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto begin;
+ 242:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 243:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     default:
+ 244:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto error;		/* must send stop condition */
+ 245:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 246:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 247:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /*
+ 248:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****    * Note [12]
+ 249:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****    * Next cycle(s): master receiver mode
+ 250:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****    */
+ 251:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN); /* send (rep.) start condition */
+ 252:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 253:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 254:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 255:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_START:		/* OK, but should not happen */
+ 256:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_REP_START:
+ 257:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       break;
+ 258:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 259:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_ARB_LOST:
+ 260:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto begin;
+ 261:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 262:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     default:
+ 263:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto error;
+ 264:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 265:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 266:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /* send SLA+R */
+ 267:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWDR = sla | TW_READ;
+ 415               	.LM14:
+ 416 0050 A22F      		mov r26,r18
+ 417 0052 A160      		ori r26,lo8(1)
+ 418               	.L5:
+ 419 0054 3150      		subi r19,lo8(-(-1))
+ 188:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   if (n++ >= MAX_ITER)
+ 421               	.LM15:
+ 422 0056 01F4      		brne .+2
+ 423 0058 00C0      		rjmp .L83
+ 424               	.L82:
+ 192:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN); /* send start condition */
+ 426               	.LM16:
+ 427 005a F093 BC00 		sts 188,r31
+ 428               	.L12:
+ 193:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 430               	.LM17:
+ 431 005e 9091 BC00 		lds r25,188
+ 432 0062 97FF      		sbrs r25,7
+ 433 0064 00C0      		rjmp .L12
+ 194:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 435               	.LM18:
+ 436 0066 9091 B900 		lds r25,185
+ 437 006a 987F      		andi r25,lo8(-8)
+ 438 006c 9093 0000 		sts twst,r25
+ 439 0070 9031      		cpi r25,lo8(16)
+ 440 0072 01F0      		breq .L13
+ 441 0074 9833      		cpi r25,lo8(56)
+ 442 0076 01F0      		breq .L82
+ 443 0078 9830      		cpi r25,lo8(8)
+ 444 007a 01F0      		breq .+2
+ 445 007c 00C0      		rjmp .L83
+ 446               	.L13:
+ 210:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWDR = sla | TW_WRITE;
+ 448               	.LM19:
+ 449 007e 2093 BB00 		sts 187,r18
+ 211:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+ 451               	.LM20:
+ 452 0082 E093 BC00 		sts 188,r30
+ 453               	.L14:
+ 212:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 455               	.LM21:
+ 456 0086 9091 BC00 		lds r25,188
+ 457 008a 97FF      		sbrs r25,7
+ 458 008c 00C0      		rjmp .L14
+ 213:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 460               	.LM22:
+ 461 008e 9091 B900 		lds r25,185
+ 462 0092 987F      		andi r25,lo8(-8)
+ 463 0094 9093 0000 		sts twst,r25
+ 464 0098 9032      		cpi r25,lo8(32)
+ 465 009a 01F0      		breq .L5
+ 466 009c 9833      		cpi r25,lo8(56)
+ 467 009e 01F0      		breq .L82
+ 468 00a0 9831      		cpi r25,lo8(24)
+ 469 00a2 01F0      		breq .+2
+ 470 00a4 00C0      		rjmp .L88
+ 229:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWDR = eeaddr;		/* low 8 bits of addr */
+ 472               	.LM23:
+ 473 00a6 8093 BB00 		sts 187,r24
+ 230:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+ 475               	.LM24:
+ 476 00aa E093 BC00 		sts 188,r30
+ 477               	.L17:
+ 231:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 479               	.LM25:
+ 480 00ae 9091 BC00 		lds r25,188
+ 481 00b2 97FF      		sbrs r25,7
+ 482 00b4 00C0      		rjmp .L17
+ 232:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 484               	.LM26:
+ 485 00b6 9091 B900 		lds r25,185
+ 486 00ba 987F      		andi r25,lo8(-8)
+ 487 00bc 9093 0000 		sts twst,r25
+ 488 00c0 9033      		cpi r25,lo8(48)
+ 489 00c2 01F0      		breq .L24
+ 490 00c4 9833      		cpi r25,lo8(56)
+ 491 00c6 01F0      		breq .L82
+ 492 00c8 9832      		cpi r25,lo8(40)
+ 493 00ca 01F0      		breq .+2
+ 494 00cc 00C0      		rjmp .L88
+ 251:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN); /* send (rep.) start condition */
+ 496               	.LM27:
+ 497 00ce F093 BC00 		sts 188,r31
+ 498               	.L20:
+ 252:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 500               	.LM28:
+ 501 00d2 9091 BC00 		lds r25,188
+ 502 00d6 97FF      		sbrs r25,7
+ 503 00d8 00C0      		rjmp .L20
+ 253:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 505               	.LM29:
+ 506 00da 9091 B900 		lds r25,185
+ 507 00de 987F      		andi r25,lo8(-8)
+ 508 00e0 9093 0000 		sts twst,r25
+ 509 00e4 9031      		cpi r25,lo8(16)
+ 510 00e6 01F0      		breq .L21
+ 511 00e8 9833      		cpi r25,lo8(56)
+ 512 00ea 01F4      		brne .+2
+ 513 00ec 00C0      		rjmp .L82
+ 514 00ee 9830      		cpi r25,lo8(8)
+ 515 00f0 01F4      		brne .L88
+ 516               	.L21:
+ 518               	.LM30:
+ 519 00f2 A093 BB00 		sts 187,r26
+ 268:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+ 521               	.LM31:
+ 522 00f6 E093 BC00 		sts 188,r30
+ 523               	.L22:
+ 269:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 525               	.LM32:
+ 526 00fa 9091 BC00 		lds r25,188
+ 527 00fe 97FF      		sbrs r25,7
+ 528 0100 00C0      		rjmp .L22
+ 270:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 530               	.LM33:
+ 531 0102 9091 B900 		lds r25,185
+ 532 0106 987F      		andi r25,lo8(-8)
+ 533 0108 9093 0000 		sts twst,r25
+ 534 010c 9034      		cpi r25,lo8(64)
+ 535 010e 01F0      		breq .L36
+ 536 0110 9834      		cpi r25,lo8(72)
+ 537 0112 01F0      		breq .L24
+ 538 0114 9833      		cpi r25,lo8(56)
+ 539 0116 01F4      		brne .L88
+ 540 0118 00C0      		rjmp .L82
+ 541               	.L24:
+ 178:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   int rv = 0;
+ 543               	.LM34:
+ 544 011a 20E0      		ldi r18,0
+ 545 011c 30E0      		ldi r19,0
+ 546 011e 00C0      		rjmp .L15
+ 547               	.L29:
+ 271:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 272:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MR_SLA_ACK:
+ 273:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       break;
+ 274:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 275:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MR_SLA_NACK:
+ 276:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto quit;
+ 277:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 278:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MR_ARB_LOST:
+ 279:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto begin;
+ 280:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 281:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     default:
+ 282:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto error;
+ 283:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 284:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 285:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   for (twcr = _BV(TWINT) | _BV(TWEN) | _BV(TWEA) /* Note [13] */;
+ 286:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****        len > 0;
+ 287:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****        len--)
+ 288:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 289:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       if (len == 1)
+ 549               	.LM35:
+ 550 0120 6130      		cpi r22,1
+ 551 0122 7105      		cpc r23,__zero_reg__
+ 552 0124 01F4      		brne .L25
+ 290:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	twcr = _BV(TWINT) | _BV(TWEN); /* send NAK this time */
+ 554               	.LM36:
+ 555 0126 94E8      		ldi r25,lo8(-124)
+ 556               	.L25:
+ 291:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       TWCR = twcr;		/* clear int to start transmission */
+ 558               	.LM37:
+ 559 0128 9093 BC00 		sts 188,r25
+ 560               	.L26:
+ 292:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 562               	.LM38:
+ 563 012c 8091 BC00 		lds r24,188
+ 564 0130 87FF      		sbrs r24,7
+ 565 0132 00C0      		rjmp .L26
+ 293:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       switch ((twst = TW_STATUS))
+ 567               	.LM39:
+ 568 0134 8091 B900 		lds r24,185
+ 569 0138 887F      		andi r24,lo8(-8)
+ 570 013a 8093 0000 		sts twst,r24
+ 571 013e 8035      		cpi r24,lo8(80)
+ 572 0140 01F0      		breq .L28
+ 573 0142 8835      		cpi r24,lo8(88)
+ 574 0144 01F4      		brne .L88
+ 294:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	{
+ 295:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	case TW_MR_DATA_NACK:
+ 296:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	  len = 0;		/* force end of loop */
+ 576               	.LM40:
+ 577 0146 60E0      		ldi r22,0
+ 578 0148 70E0      		ldi r23,0
+ 579               	.L28:
+ 297:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	  /* FALLTHROUGH */
+ 298:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	case TW_MR_DATA_ACK:
+ 299:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	  *buf++ = TWDR;
+ 581               	.LM41:
+ 582 014a 8091 BB00 		lds r24,187
+ 583 014e 8193      		st Z+,r24
+ 287:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****        len--)
+ 585               	.LM42:
+ 586 0150 6150      		subi r22,1
+ 587 0152 7109      		sbc r23,__zero_reg__
+ 588 0154 00C0      		rjmp .L23
+ 589               	.L36:
+ 270:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 591               	.LM43:
+ 592 0156 FA01      		movw r30,r20
+ 593 0158 94EC      		ldi r25,lo8(-60)
+ 594               	.L23:
+ 173:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** ee24xx_read_bytes(uint16_t eeaddr, int len, uint8_t *buf)
+ 596               	.LM44:
+ 597 015a 9F01      		movw r18,r30
+ 598 015c 241B      		sub r18,r20
+ 599 015e 350B      		sbc r19,r21
+ 285:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   for (twcr = _BV(TWINT) | _BV(TWEN) | _BV(TWEA) /* Note [13] */;
+ 601               	.LM45:
+ 602 0160 1616      		cp __zero_reg__,r22
+ 603 0162 1706      		cpc __zero_reg__,r23
+ 604 0164 04F0      		brlt .L29
+ 605 0166 00C0      		rjmp .L15
+ 606               	.L88:
+ 300:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	  rv++;
+ 301:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	  break;
+ 302:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 303:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	default:
+ 304:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	  goto error;
+ 305:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	}
+ 306:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 307:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   quit:
+ 308:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /* Note [14] */
+ 309:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTO) | _BV(TWEN); /* send stop condition */
+ 310:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 311:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   return rv;
+ 312:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 313:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   error:
+ 314:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   rv = -1;
+ 608               	.LM46:
+ 609 0168 2FEF      		ldi r18,lo8(-1)
+ 610 016a 3FEF      		ldi r19,lo8(-1)
+ 611               	.L15:
+ 309:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTO) | _BV(TWEN); /* send stop condition */
+ 613               	.LM47:
+ 614 016c 84E9      		ldi r24,lo8(-108)
+ 615 016e 8093 BC00 		sts 188,r24
+ 311:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   return rv;
+ 617               	.LM48:
+ 618 0172 00C0      		rjmp .L6
+ 619               	.L83:
+ 204:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       return -1;		/* error: not in start condition */
+ 621               	.LM49:
+ 622 0174 2FEF      		ldi r18,lo8(-1)
+ 623 0176 3FEF      		ldi r19,lo8(-1)
+ 624               	.L6:
+ 315:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   goto quit;
+ 316:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** }
+ 626               	.LM50:
+ 627 0178 C901      		movw r24,r18
+ 628 017a 0895      		ret
+ 635               	.Lscope4:
+ 637               		.stabd	78,0,0
+ 642               	.global	ee24xx_write_page
+ 644               	ee24xx_write_page:
+ 645               		.stabd	46,0,0
+ 317:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 318:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+ 319:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Write "len" bytes into EEPROM starting at "eeaddr" from "buf".
+ 320:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  *
+ 321:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * This is a bit simpler than the previous function since both, the
+ 322:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * address and the data bytes will be transfered in master transmitter
+ 323:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * mode, thus no reselection of the device is necessary.  However, the
+ 324:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * EEPROMs are only capable of writing one "page" simultaneously, so
+ 325:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * care must be taken to not cross a page boundary within one write
+ 326:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * cycle.  The amount of data one page consists of varies from
+ 327:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * manufacturer to manufacturer: some vendors only use 8-byte pages
+ 328:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * for the smaller devices, and 16-byte pages for the larger devices,
+ 329:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * while other vendors generally use 16-byte pages.  We thus use the
+ 330:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * smallest common denominator of 8 bytes per page, declared by the
+ 331:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * macro PAGE_SIZE above.
+ 332:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  *
+ 333:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * The function simply returns after writing one page, returning the
+ 334:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * actual number of data byte written.  It is up to the caller to
+ 335:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * re-invoke it in order to write further data.
+ 336:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+ 337:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** int
+ 338:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** ee24xx_write_page(uint16_t eeaddr, int len, uint8_t *buf)
+ 339:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** {
+ 647               	.LM51:
+ 648               	.LFBB5:
+ 649               	/* prologue: function */
+ 650               	/* frame size = 0 */
+ 651               	/* stack size = 0 */
+ 652               	.L__stack_usage = 0
+ 340:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   uint8_t sla, n = 0;
+ 341:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   int rv = 0;
+ 342:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   uint16_t endaddr;
+ 343:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 344:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 345:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 346:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   if (eeaddr + len < (eeaddr | (PAGE_SIZE - 1)))
+ 654               	.LM52:
+ 655 017c 680F      		add r22,r24
+ 656 017e 791F      		adc r23,r25
+ 657 0180 9C01      		movw r18,r24
+ 658 0182 2760      		ori r18,7
+ 659 0184 6217      		cp r22,r18
+ 660 0186 7307      		cpc r23,r19
+ 661 0188 00F0      		brlo .L90
+ 347:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     endaddr = eeaddr + len;
+ 348:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   else
+ 349:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     endaddr = (eeaddr | (PAGE_SIZE - 1)) + 1;
+ 663               	.LM53:
+ 664 018a B901      		movw r22,r18
+ 665 018c 6F5F      		subi r22,-1
+ 666 018e 7F4F      		sbci r23,-1
+ 667               	.L90:
+ 350:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   len = endaddr - eeaddr;
+ 351:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 352:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /* patch high bits of EEPROM address into SLA */
+ 353:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   sla = i2c_address | (((eeaddr >> 8) & 0x07) << 1);
+ 669               	.LM54:
+ 670 0190 392F      		mov r19,r25
+ 671 0192 330F      		lsl r19
+ 672 0194 3E70      		andi r19,lo8(14)
+ 673 0196 2091 0000 		lds r18,i2c_address
+ 674 019a 322B      		or r19,r18
+ 675 019c E5E6      		ldi r30,lo8(101)
+ 354:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 355:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   restart:
+ 356:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   if (n++ >= MAX_ITER)
+ 357:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     return -1;
+ 358:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   begin:
+ 359:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 360:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /* Note [15] */
+ 361:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN); /* send start condition */
+ 677               	.LM55:
+ 678 019e A4EA      		ldi r26,lo8(-92)
+ 362:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 363:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 364:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 365:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_REP_START:		/* OK, but should not happen */
+ 366:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_START:
+ 367:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       break;
+ 368:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 369:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_ARB_LOST:
+ 370:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto begin;
+ 371:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 372:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     default:
+ 373:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****         return -1;		/* error: not in start condition */
+ 374:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 				/* NB: do /not/ send stop condition */
+ 375:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 376:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 377:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   /* send SLA+W */
+ 378:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWDR = sla | TW_WRITE;
+ 379:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+ 680               	.LM56:
+ 681 01a0 F4E8      		ldi r31,lo8(-124)
+ 682               	.L91:
+ 683 01a2 E150      		subi r30,lo8(-(-1))
+ 356:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   if (n++ >= MAX_ITER)
+ 685               	.LM57:
+ 686 01a4 01F4      		brne .+2
+ 687 01a6 00C0      		rjmp .L139
+ 688               	.L138:
+ 361:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN); /* send start condition */
+ 690               	.LM58:
+ 691 01a8 A093 BC00 		sts 188,r26
+ 692               	.L96:
+ 362:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 694               	.LM59:
+ 695 01ac 2091 BC00 		lds r18,188
+ 696 01b0 27FF      		sbrs r18,7
+ 697 01b2 00C0      		rjmp .L96
+ 363:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 699               	.LM60:
+ 700 01b4 2091 B900 		lds r18,185
+ 701 01b8 287F      		andi r18,lo8(-8)
+ 702 01ba 2093 0000 		sts twst,r18
+ 703 01be 2031      		cpi r18,lo8(16)
+ 704 01c0 01F0      		breq .L97
+ 705 01c2 2833      		cpi r18,lo8(56)
+ 706 01c4 01F0      		breq .L138
+ 707 01c6 2830      		cpi r18,lo8(8)
+ 708 01c8 01F0      		breq .+2
+ 709 01ca 00C0      		rjmp .L139
+ 710               	.L97:
+ 378:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWDR = sla | TW_WRITE;
+ 712               	.LM61:
+ 713 01cc 3093 BB00 		sts 187,r19
+ 715               	.LM62:
+ 716 01d0 F093 BC00 		sts 188,r31
+ 717               	.L98:
+ 380:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 719               	.LM63:
+ 720 01d4 2091 BC00 		lds r18,188
+ 721 01d8 27FF      		sbrs r18,7
+ 722 01da 00C0      		rjmp .L98
+ 381:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 724               	.LM64:
+ 725 01dc 2091 B900 		lds r18,185
+ 726 01e0 287F      		andi r18,lo8(-8)
+ 727 01e2 2093 0000 		sts twst,r18
+ 728 01e6 2032      		cpi r18,lo8(32)
+ 729 01e8 01F0      		breq .L91
+ 730 01ea 2833      		cpi r18,lo8(56)
+ 731 01ec 01F0      		breq .L138
+ 732 01ee 2831      		cpi r18,lo8(24)
+ 733 01f0 01F4      		brne .L142
+ 382:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 383:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_SLA_ACK:
+ 384:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       break;
+ 385:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 386:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_SLA_NACK:	/* nack during select: device busy writing */
+ 387:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto restart;
+ 388:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 389:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_ARB_LOST:	/* re-arbitrate */
+ 390:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto begin;
+ 391:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 392:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     default:
+ 393:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****         goto error;		/* must send stop condition */
+ 394:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 395:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 396:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWDR = eeaddr;		/* low 8 bits of addr */
+ 735               	.LM65:
+ 736 01f2 8093 BB00 		sts 187,r24
+ 397:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWEN); /* clear interrupt to start transmission */
+ 738               	.LM66:
+ 739 01f6 F093 BC00 		sts 188,r31
+ 740               	.L101:
+ 398:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 742               	.LM67:
+ 743 01fa 2091 BC00 		lds r18,188
+ 744 01fe 27FF      		sbrs r18,7
+ 745 0200 00C0      		rjmp .L101
+ 399:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   switch ((twst = TW_STATUS))
+ 747               	.LM68:
+ 748 0202 2091 B900 		lds r18,185
+ 749 0206 287F      		andi r18,lo8(-8)
+ 750 0208 2093 0000 		sts twst,r18
+ 751 020c 2033      		cpi r18,lo8(48)
+ 752 020e 01F0      		breq .L103
+ 753 0210 2833      		cpi r18,lo8(56)
+ 754 0212 01F0      		breq .L138
+ 755 0214 2832      		cpi r18,lo8(40)
+ 756 0216 01F4      		brne .L142
+ 757 0218 00C0      		rjmp .L102
+ 758               	.L103:
+ 341:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   int rv = 0;
+ 760               	.LM69:
+ 761 021a 20E0      		ldi r18,0
+ 762 021c 30E0      		ldi r19,0
+ 763 021e 00C0      		rjmp .L99
+ 764               	.L102:
+ 350:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   len = endaddr - eeaddr;
+ 766               	.LM70:
+ 767 0220 681B      		sub r22,r24
+ 768 0222 790B      		sbc r23,r25
+ 769 0224 20E0      		ldi r18,0
+ 770 0226 30E0      		ldi r19,0
+ 400:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 401:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_DATA_ACK:
+ 402:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       break;
+ 403:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 404:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_DATA_NACK:
+ 405:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto quit;
+ 406:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 407:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     case TW_MT_ARB_LOST:
+ 408:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       goto begin;
+ 409:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 410:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     default:
+ 411:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 412:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****         goto error;		/* must send stop condition */
+ 413:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 414:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 415:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   for (; len > 0; len--)
+ 416:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 417:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       TWDR = *buf++;
+ 418:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       TWCR = _BV(TWINT) | _BV(TWEN); /* start transmission */
+ 772               	.LM71:
+ 773 0228 E4E8      		ldi r30,lo8(-124)
+ 774 022a 00C0      		rjmp .L104
+ 775               	.L107:
+ 417:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       TWDR = *buf++;
+ 777               	.LM72:
+ 778 022c DA01      		movw r26,r20
+ 779 022e 8D91      		ld r24,X+
+ 780 0230 AD01      		movw r20,r26
+ 781 0232 8093 BB00 		sts 187,r24
+ 783               	.LM73:
+ 784 0236 E093 BC00 		sts 188,r30
+ 785               	.L105:
+ 419:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */
+ 787               	.LM74:
+ 788 023a 8091 BC00 		lds r24,188
+ 789 023e 87FF      		sbrs r24,7
+ 790 0240 00C0      		rjmp .L105
+ 420:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       switch ((twst = TW_STATUS))
+ 792               	.LM75:
+ 793 0242 8091 B900 		lds r24,185
+ 794 0246 887F      		andi r24,lo8(-8)
+ 795 0248 8093 0000 		sts twst,r24
+ 796 024c 8832      		cpi r24,lo8(40)
+ 797 024e 01F4      		brne .L142
+ 421:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	{
+ 422:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	case TW_MT_DATA_NACK:
+ 423:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	  goto error;		/* device write protected -- Note [16] */
+ 424:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 425:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	case TW_MT_DATA_ACK:
+ 426:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	  rv++;
+ 799               	.LM76:
+ 800 0250 2F5F      		subi r18,-1
+ 801 0252 3F4F      		sbci r19,-1
+ 802               	.L104:
+ 338:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** ee24xx_write_page(uint16_t eeaddr, int len, uint8_t *buf)
+ 804               	.LM77:
+ 805 0254 CB01      		movw r24,r22
+ 806 0256 821B      		sub r24,r18
+ 807 0258 930B      		sbc r25,r19
+ 415:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   for (; len > 0; len--)
+ 809               	.LM78:
+ 810 025a 1816      		cp __zero_reg__,r24
+ 811 025c 1906      		cpc __zero_reg__,r25
+ 812 025e 04F0      		brlt .L107
+ 813 0260 00C0      		rjmp .L99
+ 814               	.L142:
+ 427:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	  break;
+ 428:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 429:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	default:
+ 430:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****             goto error;
+ 431:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	}
+ 432:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 433:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   quit:
+ 434:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTO) | _BV(TWEN); /* send stop condition */
+ 435:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 436:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   return rv;
+ 437:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 438:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   error:
+ 439:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   rv = -1;
+ 816               	.LM79:
+ 817 0262 2FEF      		ldi r18,lo8(-1)
+ 818 0264 3FEF      		ldi r19,lo8(-1)
+ 819               	.L99:
+ 434:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   TWCR = _BV(TWINT) | _BV(TWSTO) | _BV(TWEN); /* send stop condition */
+ 821               	.LM80:
+ 822 0266 84E9      		ldi r24,lo8(-108)
+ 823 0268 8093 BC00 		sts 188,r24
+ 436:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   return rv;
+ 825               	.LM81:
+ 826 026c 00C0      		rjmp .L92
+ 827               	.L139:
+ 373:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****         return -1;		/* error: not in start condition */
+ 829               	.LM82:
+ 830 026e 2FEF      		ldi r18,lo8(-1)
+ 831 0270 3FEF      		ldi r19,lo8(-1)
+ 832               	.L92:
+ 440:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   goto quit;
+ 441:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** }
+ 834               	.LM83:
+ 835 0272 C901      		movw r24,r18
+ 836 0274 0895      		ret
+ 843               	.Lscope5:
+ 845               		.stabd	78,0,0
+ 850               	.global	ee24xx_write_bytes
+ 852               	ee24xx_write_bytes:
+ 853               		.stabd	46,0,0
+ 442:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 443:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** /*
+ 444:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * Wrapper around ee24xx_write_page() that repeats calling this
+ 445:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * function until either an error has been returned, or all bytes
+ 446:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  * have been written.
+ 447:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****  */
+ 448:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** int
+ 449:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** ee24xx_write_bytes(uint16_t eeaddr, int len, uint8_t *buf)
+ 450:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** {
+ 855               	.LM84:
+ 856               	.LFBB6:
+ 857 0276 CF92      		push r12
+ 858 0278 DF92      		push r13
+ 859 027a EF92      		push r14
+ 860 027c FF92      		push r15
+ 861 027e 0F93      		push r16
+ 862 0280 1F93      		push r17
+ 863 0282 CF93      		push r28
+ 864 0284 DF93      		push r29
+ 865               	/* prologue: function */
+ 866               	/* frame size = 0 */
+ 867               	/* stack size = 8 */
+ 868               	.L__stack_usage = 8
+ 869 0286 6C01      		movw r12,r24
+ 870 0288 8B01      		movw r16,r22
+ 871 028a 7A01      		movw r14,r20
+ 451:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   int rv, total;
+ 452:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 453:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 454:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 455:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   total = 0;
+ 873               	.LM85:
+ 874 028c C0E0      		ldi r28,0
+ 875 028e D0E0      		ldi r29,0
+ 876               	.L145:
+ 456:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   do
+ 457:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     {
+ 458:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #if DEBUG
+ 459:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       printf("Calling ee24xx_write_page(%d, %d, %p)",
+ 460:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	     eeaddr, len, buf);
+ 461:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #endif
+ 462:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       rv = ee24xx_write_page(eeaddr, len, buf);
+ 878               	.LM86:
+ 879 0290 A701      		movw r20,r14
+ 880 0292 B801      		movw r22,r16
+ 881 0294 C601      		movw r24,r12
+ 882 0296 0E94 0000 		call ee24xx_write_page
+ 463:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #if DEBUG
+ 464:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       printf(" => %d\n", rv);
+ 465:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** #endif
+ 466:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       if (rv == -1)
+ 884               	.LM87:
+ 885 029a 8F3F      		cpi r24,-1
+ 886 029c 2FEF      		ldi r18,-1
+ 887 029e 9207      		cpc r25,r18
+ 888 02a0 01F0      		breq .L146
+ 467:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	return -1;
+ 468:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       eeaddr += rv;
+ 890               	.LM88:
+ 891 02a2 C80E      		add r12,r24
+ 892 02a4 D91E      		adc r13,r25
+ 469:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       len -= rv;
+ 894               	.LM89:
+ 895 02a6 081B      		sub r16,r24
+ 896 02a8 190B      		sbc r17,r25
+ 470:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       buf += rv;
+ 898               	.LM90:
+ 899 02aa E80E      		add r14,r24
+ 900 02ac F91E      		adc r15,r25
+ 471:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****       total += rv;
+ 902               	.LM91:
+ 903 02ae C80F      		add r28,r24
+ 904 02b0 D91F      		adc r29,r25
+ 472:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****     }
+ 473:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   while (len > 0);
+ 906               	.LM92:
+ 907 02b2 1016      		cp __zero_reg__,r16
+ 908 02b4 1106      		cpc __zero_reg__,r17
+ 909 02b6 04F0      		brlt .L145
+ 910 02b8 00C0      		rjmp .L144
+ 911               	.L146:
+ 467:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 	return -1;
+ 913               	.LM93:
+ 914 02ba CFEF      		ldi r28,lo8(-1)
+ 915 02bc DFEF      		ldi r29,lo8(-1)
+ 916               	.L144:
+ 474:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 475:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   return total;
+ 476:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** }
+ 918               	.LM94:
+ 919 02be CE01      		movw r24,r28
+ 920               	/* epilogue start */
+ 921 02c0 DF91      		pop r29
+ 922 02c2 CF91      		pop r28
+ 923 02c4 1F91      		pop r17
+ 924 02c6 0F91      		pop r16
+ 925 02c8 FF90      		pop r15
+ 926 02ca EF90      		pop r14
+ 927 02cc DF90      		pop r13
+ 928 02ce CF90      		pop r12
+ 929 02d0 0895      		ret
+ 935               	.Lscope6:
+ 937               		.stabd	78,0,0
+ 938               		.section	.rodata.str1.1,"aMS",@progbits,1
+ 939               	.LC0:
+ 940 0000 6572 726F 		.string	"error: TWI status %#x\n"
+ 940      723A 2054 
+ 940      5749 2073 
+ 940      7461 7475 
+ 940      7320 2523 
+ 941               		.text
+ 943               	.global	error
+ 945               	error:
+ 946               		.stabd	46,0,0
+ 477:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 478:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** void
+ 479:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** error(void)
+ 480:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** {
+ 948               	.LM95:
+ 949               	.LFBB7:
+ 950               	/* prologue: function */
+ 951               	/* frame size = 0 */
+ 952               	/* stack size = 0 */
+ 953               	.L__stack_usage = 0
+ 481:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c **** 
+ 482:../../../../../src/drivers/platform/firefly3/source/twi_base_calls.c ****   printf("error: TWI status %#x\n", twst);
+ 955               	.LM96:
+ 956 02d2 8091 0000 		lds r24,twst
+ 957 02d6 1F92      		push __zero_reg__
+ 958 02d8 8F93      		push r24
+ 959 02da 80E0      		ldi r24,lo8(.LC0)
+ 960 02dc 90E0      		ldi r25,hi8(.LC0)
+ 961 02de 9F93      		push r25
+ 962 02e0 8F93      		push r24
+ 963 02e2 0E94 0000 		call printf
+ 964 02e6 0F90      		pop __tmp_reg__
+ 965 02e8 0F90      		pop __tmp_reg__
+ 966 02ea 0F90      		pop __tmp_reg__
+ 967 02ec 0F90      		pop __tmp_reg__
+ 968 02ee 0895      		ret
+ 970               	.Lscope7:
+ 972               		.stabd	78,0,0
+ 973               		.comm	i2c_address,1,1
+ 974               		.comm	twst,1,1
+ 975               		.comm	app_timer0_prescale,1,1
+ 976               		.comm	app_timer0_callback,2,1
+ 977               		.comm	_nrk_time_trigger,1,1
+ 978               		.comm	_nrk_prev_timer_val,1,1
+ 979               		.comm	error_num,1,1
+ 980               		.comm	error_task,1,1
+ 981               		.comm	nrk_kernel_stk_ptr,2,1
+ 982               		.comm	nrk_idle_task_stk,256,1
+ 983               		.comm	_nrk_signal_list,4,1
+ 996               	.Letext0:
+ 997               		.ident	"GCC: (Fedora 4.7.2-1.fc17) 4.7.2"
+ 998               	.global __do_copy_data
+ 999               	.global __do_clear_bss
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 twi_base_calls.c
+     /tmp/cceU6FvJ.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/cceU6FvJ.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/cceU6FvJ.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/cceU6FvJ.s:5      *ABS*:000000000000003b __RAMPZ__
+     /tmp/cceU6FvJ.s:6      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/cceU6FvJ.s:7      *ABS*:0000000000000001 __zero_reg__
+     /tmp/cceU6FvJ.s:299    .text:0000000000000000 set_i2c_device
+                            *COM*:0000000000000001 i2c_address
+     /tmp/cceU6FvJ.s:319    .text:0000000000000006 init_i2c
+     /tmp/cceU6FvJ.s:357    .text:0000000000000026 close_i2c
+     /tmp/cceU6FvJ.s:389    .text:000000000000003a ee24xx_read_bytes
+                            *COM*:0000000000000001 twst
+     /tmp/cceU6FvJ.s:644    .text:000000000000017c ee24xx_write_page
+     /tmp/cceU6FvJ.s:852    .text:0000000000000276 ee24xx_write_bytes
+     /tmp/cceU6FvJ.s:945    .text:00000000000002d2 error
+                            *COM*:0000000000000001 app_timer0_prescale
+                            *COM*:0000000000000002 app_timer0_callback
+                            *COM*:0000000000000001 _nrk_time_trigger
+                            *COM*:0000000000000001 _nrk_prev_timer_val
+                            *COM*:0000000000000001 error_num
+                            *COM*:0000000000000001 error_task
+                            *COM*:0000000000000002 nrk_kernel_stk_ptr
+                            *COM*:0000000000000100 nrk_idle_task_stk
+                            *COM*:0000000000000004 _nrk_signal_list
+
+UNDEFINED SYMBOLS
+printf
+__do_copy_data
+__do_clear_bss

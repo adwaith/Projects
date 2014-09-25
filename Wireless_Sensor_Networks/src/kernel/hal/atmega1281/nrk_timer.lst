@@ -1,0 +1,1218 @@
+   1               		.file	"nrk_timer.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  10               		.text
+  11               	.Ltext0:
+ 137               	.global	nrk_spin_wait_us
+ 139               	nrk_spin_wait_us:
+ 140               		.stabd	46,0,0
+   1:../../../src/kernel/hal/atmega1281/nrk_timer.c **** /******************************************************************************
+   2:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  All rights reserved.
+   5:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *
+   6:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *
+  10:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *
+  14:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  GNU General Public License for more details.
+  18:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *
+  19:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *
+  22:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *  Anthony Rowe
+  24:../../../src/kernel/hal/atmega1281/nrk_timer.c **** *******************************************************************************/
+  25:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  26:../../../src/kernel/hal/atmega1281/nrk_timer.c **** #include <include.h>
+  27:../../../src/kernel/hal/atmega1281/nrk_timer.c **** #include <avr/interrupt.h>
+  28:../../../src/kernel/hal/atmega1281/nrk_timer.c **** #include <ulib.h>
+  29:../../../src/kernel/hal/atmega1281/nrk_timer.c **** #include <nrk_timer.h>
+  30:../../../src/kernel/hal/atmega1281/nrk_timer.c **** #include <nrk_error.h>
+  31:../../../src/kernel/hal/atmega1281/nrk_timer.c **** #include <nrk_cfg.h>
+  32:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  33:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void nrk_spin_wait_us(uint16_t timeout)
+  34:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 142               	.LM0:
+ 143               	.LFBB1:
+ 144               	/* prologue: function */
+ 145               	/* frame size = 0 */
+ 146               	/* stack size = 0 */
+ 147               	.L__stack_usage = 0
+ 148               	.L2:
+  35:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  36:../../../src/kernel/hal/atmega1281/nrk_timer.c ****     // This sequence uses exactly 8 clock cycle for each round
+  37:../../../src/kernel/hal/atmega1281/nrk_timer.c ****     do {
+  38:../../../src/kernel/hal/atmega1281/nrk_timer.c ****         NOP();
+ 150               	.LM1:
+ 151               	/* #APP */
+ 152               	 ;  38 "../../../src/kernel/hal/atmega1281/nrk_timer.c" 1
+ 153 0000 0000      		nop
+ 154               		
+ 155               	 ;  0 "" 2
+  39:../../../src/kernel/hal/atmega1281/nrk_timer.c ****         NOP();
+ 157               	.LM2:
+ 158               	 ;  39 "../../../src/kernel/hal/atmega1281/nrk_timer.c" 1
+ 159 0002 0000      		nop
+ 160               		
+ 161               	 ;  0 "" 2
+  40:../../../src/kernel/hal/atmega1281/nrk_timer.c ****         NOP();
+ 163               	.LM3:
+ 164               	 ;  40 "../../../src/kernel/hal/atmega1281/nrk_timer.c" 1
+ 165 0004 0000      		nop
+ 166               		
+ 167               	 ;  0 "" 2
+  41:../../../src/kernel/hal/atmega1281/nrk_timer.c ****         NOP();
+ 169               	.LM4:
+ 170               	 ;  41 "../../../src/kernel/hal/atmega1281/nrk_timer.c" 1
+ 171 0006 0000      		nop
+ 172               		
+ 173               	 ;  0 "" 2
+  42:../../../src/kernel/hal/atmega1281/nrk_timer.c ****     } while (--timeout);
+ 175               	.LM5:
+ 176               	/* #NOAPP */
+ 177 0008 0197      		sbiw r24,1
+ 178 000a 01F4      		brne .L2
+ 179               	/* epilogue start */
+  43:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  44:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 181               	.LM6:
+ 182 000c 0895      		ret
+ 184               	.Lscope1:
+ 186               		.stabd	78,0,0
+ 188               	.global	_nrk_high_speed_timer_stop
+ 190               	_nrk_high_speed_timer_stop:
+ 191               		.stabd	46,0,0
+  45:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  46:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  47:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void _nrk_setup_timer() {
+  48:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   _nrk_prev_timer_val=254;
+  49:../../../src/kernel/hal/atmega1281/nrk_timer.c ****  
+  50:../../../src/kernel/hal/atmega1281/nrk_timer.c **** // Timer 0 Setup as Asynchronous timer running from 32Khz Clock
+  51:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   ASSR = BM(AS2);
+  52:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   OCR2A = _nrk_prev_timer_val;
+  53:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TIFR2 =   BM(OCF2A) | BM(TOV2);       // Clear interrupt flag
+  54:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR2A = BM(WGM21);
+  55:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR2B = BM(CS21) | BM(CS20); //|      // reset counter on interrupt, set divider to 128
+  56:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   GTCCR |= BM(PSRASY);              // reset prescaler
+  57:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   // Clear interrupt flag
+  58:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TIFR2 =   BM(OCF2A) | BM(TOV2);       
+  59:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   // reset counter on interrupt, set divider to 128
+  60:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR0A = BM(WGM01) | BM(CS01) | BM(CS00); 
+  61:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   // reset prescaler
+  62:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   //GTCCR |= TSM;              
+  63:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   GTCCR |= BM(PSRASY);              // reset prescaler
+  64:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  65:../../../src/kernel/hal/atmega1281/nrk_timer.c **** // Timer 1 High Precision Timer
+  66:../../../src/kernel/hal/atmega1281/nrk_timer.c **** // No interrupt, prescaler 1, Normal Operation
+  67:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR1A=0;  
+  68:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR1B=BM(CS10);  // clk I/O no prescale
+  69:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCNT1=0;  // 16 bit
+  70:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   GTCCR |= BM(PSRASY);              // reset prescaler
+  71:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   GTCCR |= BM(PSRSYNC);              // reset prescaler
+  72:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  73:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   _nrk_os_timer_reset();
+  74:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   _nrk_os_timer_start();
+  75:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   _nrk_time_trigger=0;
+  76:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+  77:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  78:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void _nrk_high_speed_timer_stop()
+  79:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 193               	.LM7:
+ 194               	.LFBB2:
+ 195               	/* prologue: function */
+ 196               	/* frame size = 0 */
+ 197               	/* stack size = 0 */
+ 198               	.L__stack_usage = 0
+  80:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR1B=0;  // no clock 
+ 200               	.LM8:
+ 201 000e 1092 8100 		sts 129,__zero_reg__
+ 202               	/* epilogue start */
+  81:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 204               	.LM9:
+ 205 0012 0895      		ret
+ 207               	.Lscope2:
+ 209               		.stabd	78,0,0
+ 211               	.global	_nrk_high_speed_timer_start
+ 213               	_nrk_high_speed_timer_start:
+ 214               		.stabd	46,0,0
+  82:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  83:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void _nrk_high_speed_timer_start()
+  84:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 216               	.LM10:
+ 217               	.LFBB3:
+ 218               	/* prologue: function */
+ 219               	/* frame size = 0 */
+ 220               	/* stack size = 0 */
+ 221               	.L__stack_usage = 0
+  85:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR1B=BM(CS10);  // clk I/O no prescaler 
+ 223               	.LM11:
+ 224 0014 81E0      		ldi r24,lo8(1)
+ 225 0016 8093 8100 		sts 129,r24
+ 226               	/* epilogue start */
+  86:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 228               	.LM12:
+ 229 001a 0895      		ret
+ 231               	.Lscope3:
+ 233               		.stabd	78,0,0
+ 235               	.global	_nrk_high_speed_timer_reset
+ 237               	_nrk_high_speed_timer_reset:
+ 238               		.stabd	46,0,0
+  87:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  88:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  89:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void _nrk_high_speed_timer_reset()
+  90:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 240               	.LM13:
+ 241               	.LFBB4:
+ 242               	/* prologue: function */
+ 243               	/* frame size = 0 */
+ 244               	/* stack size = 0 */
+ 245               	.L__stack_usage = 0
+  91:../../../src/kernel/hal/atmega1281/nrk_timer.c **** //  nrk_int_disable();
+  92:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   //SFIOR |= BM(PSR321);              // reset prescaler
+  93:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   GTCCR |= BM(PSRSYNC);              // reset prescaler
+ 247               	.LM14:
+ 248 001c 83B5      		in r24,67-32
+ 249 001e 8160      		ori r24,lo8(1)
+ 250 0020 83BD      		out 67-32,r24
+  94:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCNT1=0;
+ 252               	.LM15:
+ 253 0022 1092 8500 		sts 132+1,__zero_reg__
+ 254 0026 1092 8400 		sts 132,__zero_reg__
+ 255               	/* epilogue start */
+  95:../../../src/kernel/hal/atmega1281/nrk_timer.c **** //  nrk_int_enable();
+  96:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 257               	.LM16:
+ 258 002a 0895      		ret
+ 260               	.Lscope4:
+ 262               		.stabd	78,0,0
+ 264               	.global	_nrk_high_speed_timer_get
+ 266               	_nrk_high_speed_timer_get:
+ 267               		.stabd	46,0,0
+  97:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+  98:../../../src/kernel/hal/atmega1281/nrk_timer.c **** /**
+  99:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   This function blocks for n ticks of the high speed timer after the
+ 100:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   start number of ticks.  It will handle the overflow that can occur.
+ 101:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   Do not use this for delays longer than 8ms!
+ 102:../../../src/kernel/hal/atmega1281/nrk_timer.c **** */
+ 103:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void nrk_high_speed_timer_wait( uint16_t start, uint16_t ticks )
+ 104:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 105:../../../src/kernel/hal/atmega1281/nrk_timer.c **** uint32_t tmp;
+ 106:../../../src/kernel/hal/atmega1281/nrk_timer.c **** if(start>65400) start=0;
+ 107:../../../src/kernel/hal/atmega1281/nrk_timer.c **** tmp=(uint32_t)start+(uint32_t)ticks;
+ 108:../../../src/kernel/hal/atmega1281/nrk_timer.c **** if(tmp>65536) 
+ 109:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	{
+ 110:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	tmp-=65536;
+ 111:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	do{}while(_nrk_high_speed_timer_get()>start);
+ 112:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	}
+ 113:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 114:../../../src/kernel/hal/atmega1281/nrk_timer.c **** ticks=tmp;
+ 115:../../../src/kernel/hal/atmega1281/nrk_timer.c **** do{}while(_nrk_high_speed_timer_get()<ticks);
+ 116:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 117:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 118:../../../src/kernel/hal/atmega1281/nrk_timer.c **** inline uint16_t _nrk_high_speed_timer_get()
+ 119:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 269               	.LM17:
+ 270               	.LFBB5:
+ 271 002c DF93      		push r29
+ 272 002e CF93      		push r28
+ 273 0030 00D0      		rcall .
+ 274 0032 CDB7      		in r28,__SP_L__
+ 275 0034 DEB7      		in r29,__SP_H__
+ 276               	/* prologue: function */
+ 277               	/* frame size = 2 */
+ 278               	/* stack size = 4 */
+ 279               	.L__stack_usage = 4
+ 120:../../../src/kernel/hal/atmega1281/nrk_timer.c **** volatile uint16_t tmp;
+ 121:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   //nrk_int_disable();
+ 122:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   tmp=TCNT1;
+ 281               	.LM18:
+ 282 0036 8091 8400 		lds r24,132
+ 283 003a 9091 8500 		lds r25,132+1
+ 284 003e 9A83      		std Y+2,r25
+ 285 0040 8983      		std Y+1,r24
+ 123:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   //nrk_int_enable();
+ 124:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   return tmp;
+ 287               	.LM19:
+ 288 0042 2981      		ldd r18,Y+1
+ 289 0044 3A81      		ldd r19,Y+2
+ 125:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 291               	.LM20:
+ 292 0046 C901      		movw r24,r18
+ 293               	/* epilogue start */
+ 294 0048 0F90      		pop __tmp_reg__
+ 295 004a 0F90      		pop __tmp_reg__
+ 296 004c CF91      		pop r28
+ 297 004e DF91      		pop r29
+ 298 0050 0895      		ret
+ 303               	.Lscope5:
+ 305               		.stabd	78,0,0
+ 309               	.global	nrk_high_speed_timer_wait
+ 311               	nrk_high_speed_timer_wait:
+ 312               		.stabd	46,0,0
+ 104:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 314               	.LM21:
+ 315               	.LFBB6:
+ 316 0052 EF92      		push r14
+ 317 0054 FF92      		push r15
+ 318 0056 0F93      		push r16
+ 319 0058 1F93      		push r17
+ 320 005a CF93      		push r28
+ 321 005c DF93      		push r29
+ 322               	/* prologue: function */
+ 323               	/* frame size = 0 */
+ 324               	/* stack size = 6 */
+ 325               	.L__stack_usage = 6
+ 326 005e EC01      		movw r28,r24
+ 106:../../../src/kernel/hal/atmega1281/nrk_timer.c **** if(start>65400) start=0;
+ 328               	.LM22:
+ 329 0060 8FEF      		ldi r24,hi8(-135)
+ 330 0062 C937      		cpi r28,lo8(-135)
+ 331 0064 D807      		cpc r29,r24
+ 332 0066 00F0      		brlo .L9
+ 333 0068 C0E0      		ldi r28,lo8(0)
+ 334 006a D0E0      		ldi r29,hi8(0)
+ 335               	.L9:
+ 107:../../../src/kernel/hal/atmega1281/nrk_timer.c **** tmp=(uint32_t)start+(uint32_t)ticks;
+ 337               	.LM23:
+ 338 006c 7E01      		movw r14,r28
+ 339 006e 00E0      		ldi r16,lo8(0)
+ 340 0070 10E0      		ldi r17,hi8(0)
+ 341 0072 80E0      		ldi r24,lo8(0)
+ 342 0074 90E0      		ldi r25,hi8(0)
+ 343 0076 E60E      		add r14,r22
+ 344 0078 F71E      		adc r15,r23
+ 345 007a 081F      		adc r16,r24
+ 346 007c 191F      		adc r17,r25
+ 108:../../../src/kernel/hal/atmega1281/nrk_timer.c **** if(tmp>65536) 
+ 348               	.LM24:
+ 349 007e 91E0      		ldi r25,lo8(65537)
+ 350 0080 E916      		cp r14,r25
+ 351 0082 90E0      		ldi r25,hi8(65537)
+ 352 0084 F906      		cpc r15,r25
+ 353 0086 91E0      		ldi r25,hlo8(65537)
+ 354 0088 0907      		cpc r16,r25
+ 355 008a 90E0      		ldi r25,hhi8(65537)
+ 356 008c 1907      		cpc r17,r25
+ 357 008e 00F0      		brlo .L12
+ 110:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	tmp-=65536;
+ 359               	.LM25:
+ 360 0090 80E0      		ldi r24,lo8(-65536)
+ 361 0092 90E0      		ldi r25,hi8(-65536)
+ 362 0094 AFEF      		ldi r26,hlo8(-65536)
+ 363 0096 BFEF      		ldi r27,hhi8(-65536)
+ 364 0098 E80E      		add r14,r24
+ 365 009a F91E      		adc r15,r25
+ 366 009c 0A1F      		adc r16,r26
+ 367 009e 1B1F      		adc r17,r27
+ 368               	.L11:
+ 111:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	do{}while(_nrk_high_speed_timer_get()>start);
+ 370               	.LM26:
+ 371 00a0 0E94 0000 		call _nrk_high_speed_timer_get
+ 372 00a4 C817      		cp r28,r24
+ 373 00a6 D907      		cpc r29,r25
+ 374 00a8 00F0      		brlo .L11
+ 375               	.L12:
+ 115:../../../src/kernel/hal/atmega1281/nrk_timer.c **** do{}while(_nrk_high_speed_timer_get()<ticks);
+ 377               	.LM27:
+ 378 00aa 0E94 0000 		call _nrk_high_speed_timer_get
+ 379 00ae 8E15      		cp r24,r14
+ 380 00b0 9F05      		cpc r25,r15
+ 381 00b2 00F0      		brlo .L12
+ 382               	/* epilogue start */
+ 116:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 384               	.LM28:
+ 385 00b4 DF91      		pop r29
+ 386 00b6 CF91      		pop r28
+ 387 00b8 1F91      		pop r17
+ 388 00ba 0F91      		pop r16
+ 389 00bc FF90      		pop r15
+ 390 00be EF90      		pop r14
+ 391 00c0 0895      		ret
+ 396               	.Lscope6:
+ 398               		.stabd	78,0,0
+ 400               	.global	_nrk_os_timer_stop
+ 402               	_nrk_os_timer_stop:
+ 403               		.stabd	46,0,0
+ 126:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 127:../../../src/kernel/hal/atmega1281/nrk_timer.c **** inline void _nrk_os_timer_stop()
+ 128:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 405               	.LM29:
+ 406               	.LFBB7:
+ 407               	/* prologue: function */
+ 408               	/* frame size = 0 */
+ 409               	/* stack size = 0 */
+ 410               	.L__stack_usage = 0
+ 129:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR2B=0;  // stop timer 
+ 412               	.LM30:
+ 413 00c2 1092 B100 		sts 177,__zero_reg__
+ 130:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TIMSK2 &=  ~BM(OCIE2A) ;
+ 415               	.LM31:
+ 416 00c6 E0E7      		ldi r30,lo8(112)
+ 417 00c8 F0E0      		ldi r31,hi8(112)
+ 418 00ca 8081      		ld r24,Z
+ 419 00cc 8D7F      		andi r24,lo8(-3)
+ 420 00ce 8083      		st Z,r24
+ 131:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TIMSK2 &=  ~BM(TOIE2) ;
+ 422               	.LM32:
+ 423 00d0 8081      		ld r24,Z
+ 424 00d2 8E7F      		andi r24,lo8(-2)
+ 425 00d4 8083      		st Z,r24
+ 426               	/* epilogue start */
+ 132:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 428               	.LM33:
+ 429 00d6 0895      		ret
+ 431               	.Lscope7:
+ 433               		.stabd	78,0,0
+ 436               	.global	_nrk_os_timer_set
+ 438               	_nrk_os_timer_set:
+ 439               		.stabd	46,0,0
+ 133:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 134:../../../src/kernel/hal/atmega1281/nrk_timer.c **** inline void _nrk_os_timer_set(uint8_t v)
+ 135:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 441               	.LM34:
+ 442               	.LFBB8:
+ 443               	/* prologue: function */
+ 444               	/* frame size = 0 */
+ 445               	/* stack size = 0 */
+ 446               	.L__stack_usage = 0
+ 136:../../../src/kernel/hal/atmega1281/nrk_timer.c **** TCNT2=v;
+ 448               	.LM35:
+ 449 00d8 8093 B200 		sts 178,r24
+ 450               	/* epilogue start */
+ 137:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 452               	.LM36:
+ 453 00dc 0895      		ret
+ 455               	.Lscope8:
+ 457               		.stabd	78,0,0
+ 459               	.global	_nrk_os_timer_start
+ 461               	_nrk_os_timer_start:
+ 462               		.stabd	46,0,0
+ 138:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    
+ 139:../../../src/kernel/hal/atmega1281/nrk_timer.c **** inline void _nrk_os_timer_start()
+ 140:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 464               	.LM37:
+ 465               	.LFBB9:
+ 466               	/* prologue: function */
+ 467               	/* frame size = 0 */
+ 468               	/* stack size = 0 */
+ 469               	.L__stack_usage = 0
+ 141:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   //GTCCR |= BM(PSRASY);              // reset prescaler
+ 142:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   //TCNT2 = 0;                  // reset counter
+ 143:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TIMSK2 |=   BM(OCIE2A) | BM(TOIE2) ;//| BM(TICIE1);    // Enable interrupt
+ 471               	.LM38:
+ 472 00de E0E7      		ldi r30,lo8(112)
+ 473 00e0 F0E0      		ldi r31,hi8(112)
+ 474 00e2 8081      		ld r24,Z
+ 475 00e4 8360      		ori r24,lo8(3)
+ 476 00e6 8083      		st Z,r24
+ 144:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR2B = BM(CS21) | BM(CS20); //|      // reset counter on interrupt, set divider to 128
+ 478               	.LM39:
+ 479 00e8 83E0      		ldi r24,lo8(3)
+ 480 00ea 8093 B100 		sts 177,r24
+ 481               	/* epilogue start */
+ 145:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 483               	.LM40:
+ 484 00ee 0895      		ret
+ 486               	.Lscope9:
+ 488               		.stabd	78,0,0
+ 490               	.global	_nrk_os_timer_reset
+ 492               	_nrk_os_timer_reset:
+ 493               		.stabd	46,0,0
+ 146:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 147:../../../src/kernel/hal/atmega1281/nrk_timer.c **** inline void _nrk_os_timer_reset()
+ 148:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 495               	.LM41:
+ 496               	.LFBB10:
+ 497               	/* prologue: function */
+ 498               	/* frame size = 0 */
+ 499               	/* stack size = 0 */
+ 500               	.L__stack_usage = 0
+ 149:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 150:../../../src/kernel/hal/atmega1281/nrk_timer.c ****     GTCCR |= BM(PSRASY);              // reset prescaler
+ 502               	.LM42:
+ 503 00f0 83B5      		in r24,67-32
+ 504 00f2 8260      		ori r24,lo8(2)
+ 505 00f4 83BD      		out 67-32,r24
+ 151:../../../src/kernel/hal/atmega1281/nrk_timer.c ****     TCNT2 = 0;                  // reset counter
+ 507               	.LM43:
+ 508 00f6 1092 B200 		sts 178,__zero_reg__
+ 152:../../../src/kernel/hal/atmega1281/nrk_timer.c ****     _nrk_time_trigger=0;
+ 510               	.LM44:
+ 511 00fa 1092 0000 		sts _nrk_time_trigger,__zero_reg__
+ 153:../../../src/kernel/hal/atmega1281/nrk_timer.c ****     _nrk_prev_timer_val=0;
+ 513               	.LM45:
+ 514 00fe 1092 0000 		sts _nrk_prev_timer_val,__zero_reg__
+ 515               	/* epilogue start */
+ 154:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 517               	.LM46:
+ 518 0102 0895      		ret
+ 520               	.Lscope10:
+ 522               		.stabd	78,0,0
+ 524               	.global	_nrk_setup_timer
+ 526               	_nrk_setup_timer:
+ 527               		.stabd	46,0,0
+  47:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void _nrk_setup_timer() {
+ 529               	.LM47:
+ 530               	.LFBB11:
+ 531               	/* prologue: function */
+ 532               	/* frame size = 0 */
+ 533               	/* stack size = 0 */
+ 534               	.L__stack_usage = 0
+  48:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   _nrk_prev_timer_val=254;
+ 536               	.LM48:
+ 537 0104 8EEF      		ldi r24,lo8(-2)
+ 538 0106 8093 0000 		sts _nrk_prev_timer_val,r24
+  51:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   ASSR = BM(AS2);
+ 540               	.LM49:
+ 541 010a 90E2      		ldi r25,lo8(32)
+ 542 010c 9093 B600 		sts 182,r25
+  52:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   OCR2A = _nrk_prev_timer_val;
+ 544               	.LM50:
+ 545 0110 8093 B300 		sts 179,r24
+  53:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TIFR2 =   BM(OCF2A) | BM(TOV2);       // Clear interrupt flag
+ 547               	.LM51:
+ 548 0114 83E0      		ldi r24,lo8(3)
+ 549 0116 87BB      		out 55-32,r24
+  54:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR2A = BM(WGM21);
+ 551               	.LM52:
+ 552 0118 92E0      		ldi r25,lo8(2)
+ 553 011a 9093 B000 		sts 176,r25
+  55:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR2B = BM(CS21) | BM(CS20); //|      // reset counter on interrupt, set divider to 128
+ 555               	.LM53:
+ 556 011e 8093 B100 		sts 177,r24
+  56:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   GTCCR |= BM(PSRASY);              // reset prescaler
+ 558               	.LM54:
+ 559 0122 93B5      		in r25,67-32
+ 560 0124 9260      		ori r25,lo8(2)
+ 561 0126 93BD      		out 67-32,r25
+  58:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TIFR2 =   BM(OCF2A) | BM(TOV2);       
+ 563               	.LM55:
+ 564 0128 87BB      		out 55-32,r24
+  60:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR0A = BM(WGM01) | BM(CS01) | BM(CS00); 
+ 566               	.LM56:
+ 567 012a 84BD      		out 68-32,r24
+  63:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   GTCCR |= BM(PSRASY);              // reset prescaler
+ 569               	.LM57:
+ 570 012c 83B5      		in r24,67-32
+ 571 012e 8260      		ori r24,lo8(2)
+ 572 0130 83BD      		out 67-32,r24
+  67:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR1A=0;  
+ 574               	.LM58:
+ 575 0132 1092 8000 		sts 128,__zero_reg__
+  68:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCCR1B=BM(CS10);  // clk I/O no prescale
+ 577               	.LM59:
+ 578 0136 81E0      		ldi r24,lo8(1)
+ 579 0138 8093 8100 		sts 129,r24
+  69:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   TCNT1=0;  // 16 bit
+ 581               	.LM60:
+ 582 013c 1092 8500 		sts 132+1,__zero_reg__
+ 583 0140 1092 8400 		sts 132,__zero_reg__
+  70:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   GTCCR |= BM(PSRASY);              // reset prescaler
+ 585               	.LM61:
+ 586 0144 83B5      		in r24,67-32
+ 587 0146 8260      		ori r24,lo8(2)
+ 588 0148 83BD      		out 67-32,r24
+  71:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   GTCCR |= BM(PSRSYNC);              // reset prescaler
+ 590               	.LM62:
+ 591 014a 83B5      		in r24,67-32
+ 592 014c 8160      		ori r24,lo8(1)
+ 593 014e 83BD      		out 67-32,r24
+  73:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   _nrk_os_timer_reset();
+ 595               	.LM63:
+ 596 0150 0E94 0000 		call _nrk_os_timer_reset
+  74:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   _nrk_os_timer_start();
+ 598               	.LM64:
+ 599 0154 0E94 0000 		call _nrk_os_timer_start
+  75:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   _nrk_time_trigger=0;
+ 601               	.LM65:
+ 602 0158 1092 0000 		sts _nrk_time_trigger,__zero_reg__
+ 603               	/* epilogue start */
+  76:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 605               	.LM66:
+ 606 015c 0895      		ret
+ 608               	.Lscope11:
+ 610               		.stabd	78,0,0
+ 612               	.global	_nrk_get_next_wakeup
+ 614               	_nrk_get_next_wakeup:
+ 615               		.stabd	46,0,0
+ 155:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 156:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 157:../../../src/kernel/hal/atmega1281/nrk_timer.c **** uint8_t _nrk_get_next_wakeup()
+ 158:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 617               	.LM67:
+ 618               	.LFBB12:
+ 619               	/* prologue: function */
+ 620               	/* frame size = 0 */
+ 621               	/* stack size = 0 */
+ 622               	.L__stack_usage = 0
+ 159:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	return (uint8_t)(OCR2A+1);
+ 624               	.LM68:
+ 625 015e 8091 B300 		lds r24,179
+ 160:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 627               	.LM69:
+ 628 0162 8F5F      		subi r24,lo8(-(1))
+ 629               	/* epilogue start */
+ 630 0164 0895      		ret
+ 632               	.Lscope12:
+ 634               		.stabd	78,0,0
+ 637               	.global	_nrk_set_next_wakeup
+ 639               	_nrk_set_next_wakeup:
+ 640               		.stabd	46,0,0
+ 161:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 162:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void _nrk_set_next_wakeup(uint8_t nw)
+ 163:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 642               	.LM70:
+ 643               	.LFBB13:
+ 644               	/* prologue: function */
+ 645               	/* frame size = 0 */
+ 646               	/* stack size = 0 */
+ 647               	.L__stack_usage = 0
+ 164:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    OCR2A = nw-1;
+ 649               	.LM71:
+ 650 0166 8150      		subi r24,lo8(-(-1))
+ 651 0168 8093 B300 		sts 179,r24
+ 652               	/* epilogue start */
+ 165:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 654               	.LM72:
+ 655 016c 0895      		ret
+ 657               	.Lscope13:
+ 659               		.stabd	78,0,0
+ 662               	.global	nrk_timer_int_stop
+ 664               	nrk_timer_int_stop:
+ 665               		.stabd	46,0,0
+ 166:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 167:../../../src/kernel/hal/atmega1281/nrk_timer.c **** int8_t nrk_timer_int_stop(uint8_t timer )
+ 168:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 667               	.LM73:
+ 668               	.LFBB14:
+ 669               	/* prologue: function */
+ 670               	/* frame size = 0 */
+ 671               	/* stack size = 0 */
+ 672               	.L__stack_usage = 0
+ 169:../../../src/kernel/hal/atmega1281/nrk_timer.c **** if(timer==NRK_APP_TIMER_0)
+ 674               	.LM74:
+ 675 016e 8823      		tst r24
+ 676 0170 01F4      		brne .L24
+ 170:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	{
+ 171:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	TIMSK3 = 0;
+ 678               	.LM75:
+ 679 0172 1092 7100 		sts 113,__zero_reg__
+ 680               	.L24:
+ 172:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	}
+ 173:../../../src/kernel/hal/atmega1281/nrk_timer.c **** return NRK_ERROR;
+ 174:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 682               	.LM76:
+ 683 0176 8FEF      		ldi r24,lo8(-1)
+ 684               	/* epilogue start */
+ 685 0178 0895      		ret
+ 687               	.Lscope14:
+ 689               		.stabd	78,0,0
+ 692               	.global	nrk_timer_int_reset
+ 694               	nrk_timer_int_reset:
+ 695               		.stabd	46,0,0
+ 175:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 176:../../../src/kernel/hal/atmega1281/nrk_timer.c **** int8_t nrk_timer_int_reset(uint8_t timer )
+ 177:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 697               	.LM77:
+ 698               	.LFBB15:
+ 699               	/* prologue: function */
+ 700               	/* frame size = 0 */
+ 701               	/* stack size = 0 */
+ 702               	.L__stack_usage = 0
+ 178:../../../src/kernel/hal/atmega1281/nrk_timer.c **** if(timer==NRK_APP_TIMER_0)
+ 704               	.LM78:
+ 705 017a 8823      		tst r24
+ 706 017c 01F4      		brne .L27
+ 179:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	{
+ 180:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	TCNT3=0;
+ 708               	.LM79:
+ 709 017e 1092 9500 		sts 148+1,__zero_reg__
+ 710 0182 1092 9400 		sts 148,__zero_reg__
+ 181:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	return NRK_OK;
+ 712               	.LM80:
+ 713 0186 81E0      		ldi r24,lo8(1)
+ 714 0188 0895      		ret
+ 715               	.L27:
+ 182:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	}
+ 183:../../../src/kernel/hal/atmega1281/nrk_timer.c **** return NRK_ERROR;
+ 717               	.LM81:
+ 718 018a 8FEF      		ldi r24,lo8(-1)
+ 184:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 720               	.LM82:
+ 721 018c 0895      		ret
+ 723               	.Lscope15:
+ 725               		.stabd	78,0,0
+ 728               	.global	nrk_timer_int_read
+ 730               	nrk_timer_int_read:
+ 731               		.stabd	46,0,0
+ 185:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 186:../../../src/kernel/hal/atmega1281/nrk_timer.c **** uint16_t nrk_timer_int_read(uint8_t timer )
+ 187:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 733               	.LM83:
+ 734               	.LFBB16:
+ 735               	/* prologue: function */
+ 736               	/* frame size = 0 */
+ 737               	/* stack size = 0 */
+ 738               	.L__stack_usage = 0
+ 188:../../../src/kernel/hal/atmega1281/nrk_timer.c **** if(timer==NRK_APP_TIMER_0)
+ 740               	.LM84:
+ 741 018e 8823      		tst r24
+ 742 0190 01F4      		brne .L30
+ 189:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	{
+ 190:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	return TCNT3;
+ 744               	.LM85:
+ 745 0192 2091 9400 		lds r18,148
+ 746 0196 3091 9500 		lds r19,148+1
+ 747 019a 00C0      		rjmp .L29
+ 748               	.L30:
+ 191:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	}
+ 192:../../../src/kernel/hal/atmega1281/nrk_timer.c **** return 0;
+ 750               	.LM86:
+ 751 019c 20E0      		ldi r18,lo8(0)
+ 752 019e 30E0      		ldi r19,hi8(0)
+ 753               	.L29:
+ 193:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 194:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 755               	.LM87:
+ 756 01a0 C901      		movw r24,r18
+ 757               	/* epilogue start */
+ 758 01a2 0895      		ret
+ 760               	.Lscope16:
+ 762               		.stabd	78,0,0
+ 765               	.global	nrk_timer_int_start
+ 767               	nrk_timer_int_start:
+ 768               		.stabd	46,0,0
+ 195:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 196:../../../src/kernel/hal/atmega1281/nrk_timer.c **** int8_t  nrk_timer_int_start(uint8_t timer)
+ 197:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 770               	.LM88:
+ 771               	.LFBB17:
+ 772               	/* prologue: function */
+ 773               	/* frame size = 0 */
+ 774               	/* stack size = 0 */
+ 775               	.L__stack_usage = 0
+ 198:../../../src/kernel/hal/atmega1281/nrk_timer.c **** if(timer==NRK_APP_TIMER_0)
+ 777               	.LM89:
+ 778 01a4 8823      		tst r24
+ 779 01a6 01F4      		brne .L33
+ 199:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	{
+ 200:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 		TIMSK3 = BM(OCIE3A);
+ 781               	.LM90:
+ 782 01a8 82E0      		ldi r24,lo8(2)
+ 783 01aa 8093 7100 		sts 113,r24
+ 201:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	return NRK_OK;
+ 785               	.LM91:
+ 786 01ae 81E0      		ldi r24,lo8(1)
+ 787 01b0 0895      		ret
+ 788               	.L33:
+ 202:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	}
+ 203:../../../src/kernel/hal/atmega1281/nrk_timer.c **** return NRK_ERROR;
+ 790               	.LM92:
+ 791 01b2 8FEF      		ldi r24,lo8(-1)
+ 204:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 793               	.LM93:
+ 794 01b4 0895      		ret
+ 796               	.Lscope17:
+ 798               		.stabd	78,0,0
+ 803               	.global	nrk_timer_int_configure
+ 805               	nrk_timer_int_configure:
+ 806               		.stabd	46,0,0
+ 205:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 206:../../../src/kernel/hal/atmega1281/nrk_timer.c **** int8_t  nrk_timer_int_configure(uint8_t timer, uint16_t prescaler, uint16_t compare_value, void *ca
+ 207:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 808               	.LM94:
+ 809               	.LFBB18:
+ 810               	/* prologue: function */
+ 811               	/* frame size = 0 */
+ 812               	/* stack size = 0 */
+ 813               	.L__stack_usage = 0
+ 208:../../../src/kernel/hal/atmega1281/nrk_timer.c **** if(timer==NRK_APP_TIMER_0)
+ 815               	.LM95:
+ 816 01b6 8823      		tst r24
+ 817 01b8 01F4      		brne .L41
+ 209:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	{
+ 210:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	if(prescaler>0 && prescaler<6 ) app_timer0_prescale=prescaler;
+ 819               	.LM96:
+ 820 01ba CB01      		movw r24,r22
+ 821 01bc 0197      		sbiw r24,1
+ 822 01be 8530      		cpi r24,5
+ 823 01c0 9105      		cpc r25,__zero_reg__
+ 824 01c2 00F4      		brsh .L36
+ 826               	.LM97:
+ 827 01c4 6093 0000 		sts app_timer0_prescale,r22
+ 828               	.L36:
+ 211:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	TCCR3A = 0;  
+ 830               	.LM98:
+ 831 01c8 1092 9000 		sts 144,__zero_reg__
+ 212:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	TCCR3B = BM(WGM32);  // Automatic restart on compare, count up
+ 833               	.LM99:
+ 834 01cc 88E0      		ldi r24,lo8(8)
+ 835 01ce 8093 9100 		sts 145,r24
+ 213:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   	OCR3AH = (compare_value >> 8) & 0xFF;	
+ 837               	.LM100:
+ 838 01d2 5093 9900 		sts 153,r21
+ 214:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   	OCR3AL = (compare_value & 0xFF );
+ 840               	.LM101:
+ 841 01d6 4093 9800 		sts 152,r20
+ 215:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	app_timer0_callback=callback_func;
+ 843               	.LM102:
+ 844 01da 3093 0000 		sts app_timer0_callback+1,r19
+ 845 01de 2093 0000 		sts app_timer0_callback,r18
+ 216:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	if(app_timer0_prescale==1) TCCR3B |= BM(CS30);  
+ 847               	.LM103:
+ 848 01e2 8091 0000 		lds r24,app_timer0_prescale
+ 849 01e6 8130      		cpi r24,lo8(1)
+ 850 01e8 01F4      		brne .L37
+ 852               	.LM104:
+ 853 01ea 8091 9100 		lds r24,145
+ 854 01ee 8160      		ori r24,lo8(1)
+ 855 01f0 00C0      		rjmp .L43
+ 856               	.L37:
+ 217:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	// Divide by 1
+ 218:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	else if(app_timer0_prescale==2) TCCR3B |= BM(CS31); 
+ 858               	.LM105:
+ 859 01f2 8230      		cpi r24,lo8(2)
+ 860 01f4 01F4      		brne .L38
+ 862               	.LM106:
+ 863 01f6 8091 9100 		lds r24,145
+ 864 01fa 8260      		ori r24,lo8(2)
+ 865 01fc 00C0      		rjmp .L43
+ 866               	.L38:
+ 219:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	// Divide by 8
+ 220:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	else if(app_timer0_prescale==3) TCCR3B |= BM(CS31) | BM(CS30);  
+ 868               	.LM107:
+ 869 01fe 8330      		cpi r24,lo8(3)
+ 870 0200 01F4      		brne .L39
+ 872               	.LM108:
+ 873 0202 8091 9100 		lds r24,145
+ 874 0206 8360      		ori r24,lo8(3)
+ 875               	.L43:
+ 876 0208 8093 9100 		sts 145,r24
+ 221:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	// Divide by 64
+ 222:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	else if(app_timer0_prescale==4) TCCR3B |= BM(CS32) ;  
+ 223:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	// Divide by 256 
+ 224:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	else if(app_timer0_prescale==5) TCCR3B |= BM(CS32) | BM(CS30);  
+ 225:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	// Divide by 1024
+ 226:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	return NRK_OK;
+ 878               	.LM109:
+ 879 020c 81E0      		ldi r24,lo8(1)
+ 880 020e 0895      		ret
+ 881               	.L39:
+ 222:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	else if(app_timer0_prescale==4) TCCR3B |= BM(CS32) ;  
+ 883               	.LM110:
+ 884 0210 8430      		cpi r24,lo8(4)
+ 885 0212 01F4      		brne .L40
+ 222:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	else if(app_timer0_prescale==4) TCCR3B |= BM(CS32) ;  
+ 887               	.LM111:
+ 888 0214 8091 9100 		lds r24,145
+ 889 0218 8460      		ori r24,lo8(4)
+ 890 021a 00C0      		rjmp .L43
+ 891               	.L40:
+ 224:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	else if(app_timer0_prescale==5) TCCR3B |= BM(CS32) | BM(CS30);  
+ 893               	.LM112:
+ 894 021c 8530      		cpi r24,lo8(5)
+ 895 021e 01F4      		brne .L42
+ 224:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	else if(app_timer0_prescale==5) TCCR3B |= BM(CS32) | BM(CS30);  
+ 897               	.LM113:
+ 898 0220 8091 9100 		lds r24,145
+ 899 0224 8560      		ori r24,lo8(5)
+ 900 0226 00C0      		rjmp .L43
+ 901               	.L41:
+ 227:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	}
+ 228:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 229:../../../src/kernel/hal/atmega1281/nrk_timer.c **** return NRK_ERROR;
+ 903               	.LM114:
+ 904 0228 8FEF      		ldi r24,lo8(-1)
+ 905 022a 0895      		ret
+ 906               	.L42:
+ 226:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	return NRK_OK;
+ 908               	.LM115:
+ 909 022c 81E0      		ldi r24,lo8(1)
+ 230:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 911               	.LM116:
+ 912 022e 0895      		ret
+ 914               	.Lscope18:
+ 916               		.stabd	78,0,0
+ 918               	.global	_nrk_os_timer_get
+ 920               	_nrk_os_timer_get:
+ 921               		.stabd	46,0,0
+ 231:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 232:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 233:../../../src/kernel/hal/atmega1281/nrk_timer.c **** inline uint8_t _nrk_os_timer_get()
+ 234:../../../src/kernel/hal/atmega1281/nrk_timer.c **** {
+ 923               	.LM117:
+ 924               	.LFBB19:
+ 925               	/* prologue: function */
+ 926               	/* frame size = 0 */
+ 927               	/* stack size = 0 */
+ 928               	.L__stack_usage = 0
+ 235:../../../src/kernel/hal/atmega1281/nrk_timer.c ****   return (volatile uint8_t)TCNT2;
+ 930               	.LM118:
+ 931 0230 8091 B200 		lds r24,178
+ 932               	/* epilogue start */
+ 236:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 934               	.LM119:
+ 935 0234 0895      		ret
+ 937               	.Lscope19:
+ 939               		.stabd	78,0,0
+ 941               	.global	__vector_default
+ 943               	__vector_default:
+ 944               		.stabd	46,0,0
+ 237:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 238:../../../src/kernel/hal/atmega1281/nrk_timer.c **** //--------------------------------------------------------------------------------------
+ 239:../../../src/kernel/hal/atmega1281/nrk_timer.c **** //  Default ISR 
+ 240:../../../src/kernel/hal/atmega1281/nrk_timer.c **** //--------------------------------------------------------------------------------------
+ 241:../../../src/kernel/hal/atmega1281/nrk_timer.c **** SIGNAL(__vector_default) {
+ 946               	.LM120:
+ 947               	.LFBB20:
+ 948 0236 1F92      		push __zero_reg__
+ 949 0238 0F92      		push r0
+ 950 023a 0FB6      		in r0,__SREG__
+ 951 023c 0F92      		push r0
+ 952 023e 0BB6      		in r0,91-32
+ 953 0240 0F92      		push r0
+ 954 0242 1124      		clr __zero_reg__
+ 955 0244 2F93      		push r18
+ 956 0246 3F93      		push r19
+ 957 0248 4F93      		push r20
+ 958 024a 5F93      		push r21
+ 959 024c 6F93      		push r22
+ 960 024e 7F93      		push r23
+ 961 0250 8F93      		push r24
+ 962 0252 9F93      		push r25
+ 963 0254 AF93      		push r26
+ 964 0256 BF93      		push r27
+ 965 0258 EF93      		push r30
+ 966 025a FF93      		push r31
+ 967               	/* prologue: Signal */
+ 968               	/* frame size = 0 */
+ 969               	/* stack size = 16 */
+ 970               	.L__stack_usage = 16
+ 242:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	nrk_kernel_error_add(NRK_SEG_FAULT,0);
+ 972               	.LM121:
+ 973 025c 8AE0      		ldi r24,lo8(10)
+ 974 025e 60E0      		ldi r22,lo8(0)
+ 975 0260 0E94 0000 		call nrk_kernel_error_add
+ 976               	.L46:
+ 977 0264 00C0      		rjmp .L46
+ 979               	.Lscope20:
+ 981               		.stabd	78,0,0
+ 983               	.global	__vector_15
+ 985               	__vector_15:
+ 986               		.stabd	46,0,0
+ 243:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	while(1);
+ 244:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 245:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 246:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void TIMER2_OVF_vect( void ) __attribute__ ( ( signal,naked ));
+ 247:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void TIMER2_OVF_vect(void) {
+ 988               	.LM122:
+ 989               	.LFBB21:
+ 990               	/* prologue: naked */
+ 991               	/* frame size = 0 */
+ 992               	/* stack size = 0 */
+ 993               	.L__stack_usage = 0
+ 994               	/* epilogue start */
+ 248:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	#ifdef NRK_KERNEL_TEST
+ 249:../../../src/kernel/hal/atmega1281/nrk_timer.c ****         nrk_kernel_error_add(NRK_TIMER_OVERFLOW,0);
+ 250:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	#endif
+ 251:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 252:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	return;  	
+ 253:../../../src/kernel/hal/atmega1281/nrk_timer.c **** } 
+ 996               	.LM123:
+ 998               	.Lscope21:
+ 1000               		.stabd	78,0,0
+ 1002               	.global	__vector_13
+ 1004               	__vector_13:
+ 1005               		.stabd	46,0,0
+ 254:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 255:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 256:../../../src/kernel/hal/atmega1281/nrk_timer.c **** // This is the SUSPEND for the OS timer Tick
+ 257:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void TIMER2_COMPA_vect( void ) __attribute__ ( ( signal,naked ));
+ 258:../../../src/kernel/hal/atmega1281/nrk_timer.c **** void TIMER2_COMPA_vect(void) {
+ 1007               	.LM124:
+ 1008               	.LFBB22:
+ 1009               	/* prologue: naked */
+ 1010               	/* frame size = 0 */
+ 1011               	/* stack size = 0 */
+ 1012               	.L__stack_usage = 0
+ 259:../../../src/kernel/hal/atmega1281/nrk_timer.c **** asm volatile (
+ 1014               	.LM125:
+ 1015               	/* #APP */
+ 1016               	 ;  259 "../../../src/kernel/hal/atmega1281/nrk_timer.c" 1
+ 1017 0266 0F92      		push    r0 
+ 1018 0268 0FB6      		in      r0, __SREG__  
+ 1019 026a 0F92      		push    r0  
+ 1020 026c 1F92      		push    r1 
+ 1021 026e 2F92      		push    r2 
+ 1022 0270 3F92      		push    r3 
+ 1023 0272 4F92      		push    r4 
+ 1024 0274 5F92      		push    r5 
+ 1025 0276 6F92      		push    r6 
+ 1026 0278 7F92      		push    r7 
+ 1027 027a 8F92      		push    r8 
+ 1028 027c 9F92      		push    r9 
+ 1029 027e AF92      		push    r10 
+ 1030 0280 BF92      		push    r11 
+ 1031 0282 CF92      		push    r12 
+ 1032 0284 DF92      		push    r13 
+ 1033 0286 EF92      		push    r14 
+ 1034 0288 FF92      		push    r15 
+ 1035 028a 0F93      		push    r16 
+ 1036 028c 1F93      		push    r17 
+ 1037 028e 2F93      		push    r18 
+ 1038 0290 3F93      		push    r19 
+ 1039 0292 4F93      		push    r20 
+ 1040 0294 5F93      		push    r21 
+ 1041 0296 6F93      		push    r22 
+ 1042 0298 7F93      		push    r23 
+ 1043 029a 8F93      		push    r24 
+ 1044 029c 9F93      		push    r25 
+ 1045 029e AF93      		push    r26 
+ 1046 02a0 BF93      		push    r27 
+ 1047 02a2 CF93      		push    r28 
+ 1048 02a4 DF93      		push    r29 
+ 1049 02a6 EF93      		push    r30 
+ 1050 02a8 FF93      		push    r31 
+ 1051 02aa A091 0000 		lds r26,nrk_cur_task_TCB 
+ 1052 02ae B091 0000 		lds r27,nrk_cur_task_TCB+1 
+ 1053 02b2 0DB6      		in r0,__SP_L__ 
+ 1054 02b4 0D92      		st x+, r0 
+ 1055 02b6 0EB6      		in r0,__SP_H__ 
+ 1056 02b8 0D92      		st x+, r0 
+ 1057 02ba 1F92      		push r1  
+ 1058 02bc A091 0000 		lds r26,nrk_kernel_stk_ptr 
+ 1059 02c0 B091 0000 		lds r27,nrk_kernel_stk_ptr+1 
+ 1060 02c4 1E90      		ld r1,-x 
+ 1061 02c6 BEBF      		out __SP_H__, r27 
+ 1062 02c8 ADBF      		out __SP_L__, r26 
+ 1063 02ca 0895      		ret
+ 1064               		
+ 1065               	 ;  0 "" 2
+ 1066               	/* epilogue start */
+ 260:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r0 \n\t" \
+ 261:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "in      r0, __SREG__  \n\t" \ 
+ 262:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r0  \n\t" \
+ 263:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r1 \n\t" \
+ 264:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r2 \n\t" \
+ 265:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r3 \n\t" \
+ 266:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r4 \n\t" \
+ 267:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r5 \n\t" \
+ 268:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r6 \n\t" \
+ 269:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r7 \n\t" \
+ 270:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r8 \n\t" \
+ 271:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r9 \n\t" \
+ 272:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r10 \n\t" \
+ 273:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r11 \n\t" \
+ 274:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r12 \n\t" \
+ 275:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r13 \n\t" \
+ 276:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r14 \n\t" \
+ 277:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r15 \n\t" \
+ 278:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r16 \n\t" \
+ 279:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r17 \n\t" \
+ 280:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r18 \n\t" \
+ 281:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r19 \n\t" \
+ 282:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r20 \n\t" \
+ 283:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r21 \n\t" \
+ 284:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r22 \n\t" \
+ 285:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r23 \n\t" \
+ 286:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r24 \n\t" \
+ 287:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r25 \n\t" \
+ 288:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r26 \n\t" \
+ 289:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r27 \n\t" \
+ 290:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r28 \n\t" \
+ 291:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r29 \n\t" \
+ 292:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r30 \n\t" \
+ 293:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push    r31 \n\t" \
+ 294:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "lds r26,nrk_cur_task_TCB \n\t" \
+ 295:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "lds r27,nrk_cur_task_TCB+1 \n\t" \
+ 296:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "in r0,__SP_L__ \n\t" \
+ 297:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "st x+, r0 \n\t" \
+ 298:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "in r0,__SP_H__ \n\t" \
+ 299:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "st x+, r0 \n\t" \
+ 300:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "push r1  \n\t" \
+ 301:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "lds r26,nrk_kernel_stk_ptr \n\t" \
+ 302:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "lds r27,nrk_kernel_stk_ptr+1 \n\t" \
+ 303:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "ld r1,-x \n\t" \
+ 304:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "out __SP_H__, r27 \n\t" \
+ 305:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "out __SP_L__, r26 \n\t" \
+ 306:../../../src/kernel/hal/atmega1281/nrk_timer.c ****    "ret\n\t" \
+ 307:../../../src/kernel/hal/atmega1281/nrk_timer.c **** );
+ 308:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 309:../../../src/kernel/hal/atmega1281/nrk_timer.c **** } 
+ 1068               	.LM126:
+ 1069               	/* #NOAPP */
+ 1071               	.Lscope22:
+ 1073               		.stabd	78,0,0
+ 1075               	.global	__vector_32
+ 1077               	__vector_32:
+ 1078               		.stabd	46,0,0
+ 310:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 311:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 312:../../../src/kernel/hal/atmega1281/nrk_timer.c **** SIGNAL(TIMER3_COMPA_vect) {
+ 1080               	.LM127:
+ 1081               	.LFBB23:
+ 1082 02cc 1F92      		push __zero_reg__
+ 1083 02ce 0F92      		push r0
+ 1084 02d0 0FB6      		in r0,__SREG__
+ 1085 02d2 0F92      		push r0
+ 1086 02d4 0BB6      		in r0,91-32
+ 1087 02d6 0F92      		push r0
+ 1088 02d8 1124      		clr __zero_reg__
+ 1089 02da 2F93      		push r18
+ 1090 02dc 3F93      		push r19
+ 1091 02de 4F93      		push r20
+ 1092 02e0 5F93      		push r21
+ 1093 02e2 6F93      		push r22
+ 1094 02e4 7F93      		push r23
+ 1095 02e6 8F93      		push r24
+ 1096 02e8 9F93      		push r25
+ 1097 02ea AF93      		push r26
+ 1098 02ec BF93      		push r27
+ 1099 02ee EF93      		push r30
+ 1100 02f0 FF93      		push r31
+ 1101               	/* prologue: Signal */
+ 1102               	/* frame size = 0 */
+ 1103               	/* stack size = 16 */
+ 1104               	.L__stack_usage = 16
+ 313:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	if(app_timer0_callback!=NULL) app_timer0_callback();
+ 1106               	.LM128:
+ 1107 02f2 E091 0000 		lds r30,app_timer0_callback
+ 1108 02f6 F091 0000 		lds r31,app_timer0_callback+1
+ 1109 02fa 3097      		sbiw r30,0
+ 1110 02fc 01F0      		breq .L50
+ 1112               	.LM129:
+ 1113 02fe 0995      		icall
+ 1114 0300 00C0      		rjmp .L49
+ 1115               	.L50:
+ 314:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	else
+ 315:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	nrk_kernel_error_add(NRK_SEG_FAULT,0);
+ 1117               	.LM130:
+ 1118 0302 8AE0      		ldi r24,lo8(10)
+ 1119 0304 60E0      		ldi r22,lo8(0)
+ 1120 0306 0E94 0000 		call nrk_kernel_error_add
+ 1121               	.L49:
+ 1122               	/* epilogue start */
+ 316:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	return;  	
+ 317:../../../src/kernel/hal/atmega1281/nrk_timer.c **** }
+ 1124               	.LM131:
+ 1125 030a FF91      		pop r31
+ 1126 030c EF91      		pop r30
+ 1127 030e BF91      		pop r27
+ 1128 0310 AF91      		pop r26
+ 1129 0312 9F91      		pop r25
+ 1130 0314 8F91      		pop r24
+ 1131 0316 7F91      		pop r23
+ 1132 0318 6F91      		pop r22
+ 1133 031a 5F91      		pop r21
+ 1134 031c 4F91      		pop r20
+ 1135 031e 3F91      		pop r19
+ 1136 0320 2F91      		pop r18
+ 1137 0322 0F90      		pop r0
+ 1138 0324 0BBE      		out 91-32,r0
+ 1139 0326 0F90      		pop r0
+ 1140 0328 0FBE      		out __SREG__,r0
+ 1141 032a 0F90      		pop r0
+ 1142 032c 1F90      		pop __zero_reg__
+ 1143 032e 1895      		reti
+ 1145               	.Lscope23:
+ 1147               		.stabd	78,0,0
+ 1149               	.global	__vector_17
+ 1151               	__vector_17:
+ 1152               		.stabd	46,0,0
+ 318:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 319:../../../src/kernel/hal/atmega1281/nrk_timer.c **** //--------------------------------------------------------------------------------------
+ 320:../../../src/kernel/hal/atmega1281/nrk_timer.c **** //  TIMER 1 COMPARE ISR
+ 321:../../../src/kernel/hal/atmega1281/nrk_timer.c **** //--------------------------------------------------------------------------------------
+ 322:../../../src/kernel/hal/atmega1281/nrk_timer.c **** SIGNAL(SIG_OUTPUT_COMPARE1A) {
+ 1154               	.LM132:
+ 1155               	.LFBB24:
+ 1156 0330 1F92      		push __zero_reg__
+ 1157 0332 0F92      		push r0
+ 1158 0334 0FB6      		in r0,__SREG__
+ 1159 0336 0F92      		push r0
+ 1160 0338 1124      		clr __zero_reg__
+ 1161               	/* prologue: Signal */
+ 1162               	/* frame size = 0 */
+ 1163               	/* stack size = 3 */
+ 1164               	.L__stack_usage = 3
+ 1165               	/* epilogue start */
+ 323:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 
+ 324:../../../src/kernel/hal/atmega1281/nrk_timer.c **** 	return;  	
+ 325:../../../src/kernel/hal/atmega1281/nrk_timer.c **** } 
+ 1167               	.LM133:
+ 1168 033a 0F90      		pop r0
+ 1169 033c 0FBE      		out __SREG__,r0
+ 1170 033e 0F90      		pop r0
+ 1171 0340 1F90      		pop __zero_reg__
+ 1172 0342 1895      		reti
+ 1174               	.Lscope24:
+ 1176               		.stabd	78,0,0
+ 1177               		.comm _nrk_signal_list,4,1
+ 1178               		.comm nrk_idle_task_stk,128,1
+ 1179               		.comm nrk_kernel_stk_ptr,2,1
+ 1180               		.comm _nrk_prev_timer_val,1,1
+ 1181               		.comm _nrk_time_trigger,1,1
+ 1182               		.comm app_timer0_callback,2,1
+ 1183               		.comm app_timer0_prescale,1,1
+ 1184               		.comm error_task,1,1
+ 1185               		.comm error_num,1,1
+ 1196               	.Letext0:
+ 1197               	.global __do_clear_bss
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 nrk_timer.c
+     /tmp/cc0afatf.s:2      *ABS*:000000000000003f __SREG__
+     /tmp/cc0afatf.s:3      *ABS*:000000000000003e __SP_H__
+     /tmp/cc0afatf.s:4      *ABS*:000000000000003d __SP_L__
+     /tmp/cc0afatf.s:5      *ABS*:0000000000000034 __CCP__
+     /tmp/cc0afatf.s:6      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/cc0afatf.s:7      *ABS*:0000000000000001 __zero_reg__
+     /tmp/cc0afatf.s:139    .text:0000000000000000 nrk_spin_wait_us
+     /tmp/cc0afatf.s:190    .text:000000000000000e _nrk_high_speed_timer_stop
+     /tmp/cc0afatf.s:213    .text:0000000000000014 _nrk_high_speed_timer_start
+     /tmp/cc0afatf.s:237    .text:000000000000001c _nrk_high_speed_timer_reset
+     /tmp/cc0afatf.s:266    .text:000000000000002c _nrk_high_speed_timer_get
+     /tmp/cc0afatf.s:311    .text:0000000000000052 nrk_high_speed_timer_wait
+     /tmp/cc0afatf.s:402    .text:00000000000000c2 _nrk_os_timer_stop
+     /tmp/cc0afatf.s:438    .text:00000000000000d8 _nrk_os_timer_set
+     /tmp/cc0afatf.s:461    .text:00000000000000de _nrk_os_timer_start
+     /tmp/cc0afatf.s:492    .text:00000000000000f0 _nrk_os_timer_reset
+                            *COM*:0000000000000001 _nrk_time_trigger
+                            *COM*:0000000000000001 _nrk_prev_timer_val
+     /tmp/cc0afatf.s:526    .text:0000000000000104 _nrk_setup_timer
+     /tmp/cc0afatf.s:614    .text:000000000000015e _nrk_get_next_wakeup
+     /tmp/cc0afatf.s:639    .text:0000000000000166 _nrk_set_next_wakeup
+     /tmp/cc0afatf.s:664    .text:000000000000016e nrk_timer_int_stop
+     /tmp/cc0afatf.s:694    .text:000000000000017a nrk_timer_int_reset
+     /tmp/cc0afatf.s:730    .text:000000000000018e nrk_timer_int_read
+     /tmp/cc0afatf.s:767    .text:00000000000001a4 nrk_timer_int_start
+     /tmp/cc0afatf.s:805    .text:00000000000001b6 nrk_timer_int_configure
+                            *COM*:0000000000000001 app_timer0_prescale
+                            *COM*:0000000000000002 app_timer0_callback
+     /tmp/cc0afatf.s:920    .text:0000000000000230 _nrk_os_timer_get
+     /tmp/cc0afatf.s:943    .text:0000000000000236 __vector_default
+     /tmp/cc0afatf.s:985    .text:0000000000000266 __vector_15
+     /tmp/cc0afatf.s:1004   .text:0000000000000266 __vector_13
+                            *COM*:0000000000000002 nrk_kernel_stk_ptr
+     /tmp/cc0afatf.s:1077   .text:00000000000002cc __vector_32
+     /tmp/cc0afatf.s:1151   .text:0000000000000330 __vector_17
+                            *COM*:0000000000000004 _nrk_signal_list
+                            *COM*:0000000000000080 nrk_idle_task_stk
+                            *COM*:0000000000000001 error_task
+                            *COM*:0000000000000001 error_num
+
+UNDEFINED SYMBOLS
+nrk_kernel_error_add
+nrk_cur_task_TCB
+__do_clear_bss

@@ -1,0 +1,569 @@
+/******************************************************************************
+*  Nano-RK, a real-time operating system for sensor networks.
+*  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+*  All rights reserved.
+*
+*  This is the Open Source Version of Nano-RK included as part of a Dual
+*  Licensing Model. If you are unsure which license to use please refer to:
+*  http://www.nanork.org/nano-RK/wiki/Licensing
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation, version 2.0 of the License.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+*******************************************************************************/
+
+
+#include <nrk.h>
+#include <include.h>
+#include <ulib.h>
+#include <stdio.h>
+#include <bmac.h>
+#include <avr/sleep.h>
+#include <hal.h>
+#include <nrk_error.h>
+#include <nrk_timer.h>
+#include <nrk_driver_list.h>
+#include <nrk_driver.h>
+#include <ff_basic_sensor.h>
+#include "rx_utils.h"
+#include "global.h"
+
+NRK_STK Stack1[NRK_APP_STACKSIZE];
+nrk_task_type TaskOne;
+void uart_task(void);
+
+NRK_STK Stack2[NRK_APP_STACKSIZE];
+nrk_task_type TaskTwo;
+void discover_task(void);
+
+NRK_STK Stack3[NRK_APP_STACKSIZE];
+nrk_task_type TaskThree;
+void rx_task (void);
+
+NRK_STK Stack4[NRK_APP_STACKSIZE];
+nrk_task_type TaskFour;
+void retrans_task (void);
+
+NRK_STK Stack5[NRK_APP_STACKSIZE];
+nrk_task_type TaskFive;
+void act_recog (void);
+
+void version_task (void);
+
+void nrk_create_taskset();
+void nrk_register_drivers();
+uint8_t kill_stack(uint8_t val);
+
+int
+main ()
+{
+  nrk_setup_ports();
+  nrk_setup_uart(UART_BAUDRATE_115K2);
+
+	log_g = 1;
+  if(log_g)printf("log:Starting up...\r\n" );
+
+  nrk_init();
+uint8_t i;
+request_flag_g=0;
+retransmit_count_g=0;
+//added this 1
+for(i=0;i<5;i++)
+{
+	version_g[i] = 0;
+}
+//added
+	version_g[MAC_ADDR] = -1;
+	data_index_g = -1;
+
+  nrk_led_clr(ORANGE_LED);
+  nrk_led_clr(BLUE_LED);
+  nrk_led_set(GREEN_LED);
+  nrk_led_clr(RED_LED);
+ 	
+	tx_sem = nrk_sem_create(1,4);
+  if(tx_sem==NULL) nrk_kprintf( PSTR("log:Error creating sem\r\n" ));
+	
+	conn_sem = nrk_sem_create(1,4);
+  if(conn_sem==NULL) nrk_kprintf( PSTR("log:Error creating sem\n" ));
+
+	uart_sem = nrk_sem_create(1,4);
+  if(conn_sem==NULL) nrk_kprintf( PSTR("log:Error creating sem\n" ));
+	
+	ack_sem = nrk_sem_create(1,4);
+  if(conn_sem==NULL) nrk_kprintf( PSTR("log:Error creating sem\n" ));
+  
+	nrk_time_set(0,0);
+  nrk_register_drivers();
+  bmac_task_config ();
+  nrk_create_taskset ();
+  nrk_start();
+ 
+
+  return 0;
+}
+
+
+void uart_task()
+{
+	char c;
+	nrk_sig_t uart_rx_signal;
+	//nrk_sig_mask_t sm;
+	uint8_t buf_pos = 0;
+	uint8_t vbuf_pos = 0;
+	uint8_t pos = 0;
+	uint8_t other_active = 1;  
+	uint8_t version_buf[VERSION_BUF_SIZE];
+	int16_t my_version = 0;
+	uint8_t connection_l;  
+	uint8_t activate_uart_l;  
+	uint8_t ack_received_l;
+
+  if(log_g) printf("log:uart_task PID=%d\r\n",nrk_get_pid());
+
+  // Get the signal for UART RX  
+  uart_rx_signal=nrk_uart_rx_signal_get();
+  // Register your task to wakeup on RX Data 
+  if(uart_rx_signal==NRK_ERROR) nrk_kprintf( PSTR("log:Get Signal ERROR!\r\n") );
+  nrk_signal_register(uart_rx_signal);
+
+
+  while(1) {
+
+	nrk_sem_pend(conn_sem);
+	connection_l = connection_g;  
+	nrk_sem_post(conn_sem);
+	nrk_sem_pend(ack_sem);
+	ack_received_l = ack_received_g;
+	nrk_sem_post(ack_sem);
+
+
+	if(activate_uart_g == 1 && other_active == 1)
+	{
+		memset(uart_rx_buf,0,buf_pos); 
+		buf_pos = 0;
+		if(log_g) printf("log:Switching off logs\r\n");
+		req_for_next_data();
+		log_g = 0;
+		other_active = 0;
+	}
+	else if(activate_uart_g == 0 && vertsk_active_g == 0)
+	{
+		nrk_wait_until_next_period();	
+		continue;
+	} else if(activate_uart_g == 0 && connection_l == 0 && vertsk_active_g == 1) { // assuming this completes in one period
+			
+		if(log_g)nrk_kprintf(PSTR("verreq\n"));
+		log_g = 0;
+		while(nrk_uart_data_ready(NRK_DEFAULT_UART)!=0)
+		{
+			// Read Character
+			c=getchar();
+			if(vbuf_pos >= VERSION_BUF_SIZE)
+ 			{
+				vbuf_pos = 0; 
+				nrk_kprintf(PSTR("Ver buf ovflw\n"));
+			}
+			version_buf[vbuf_pos++] = c; 	
+			nrk_led_toggle(GREEN_LED);
+			if(c =='&')
+			{
+				log_g = 1;
+				version_buf[vbuf_pos++] = '\0';
+				pos = 0; 
+				my_version = get_next_int(version_buf,&pos,vbuf_pos);
+				if(log_g) printf("log:Ver %d\n",my_version);
+				version_g[MAC_ADDR] = my_version;
+				if(vbuf_pos > 6) 
+				{	
+					if(log_g)nrk_kprintf(PSTR("Cnct Frnd\n"));
+					pos++;
+					bmac_tx_pkt(version_buf+pos,vbuf_pos-pos);
+ 				}
+				vertsk_active_g = 0;
+				vbuf_pos = 0; 
+			} else if (c == '$') {
+				vbuf_pos = 0; 
+			}
+		}		
+		log_g = 1;
+		nrk_wait_until_next_period();
+		continue; 
+	}
+	
+	nrk_sem_pend(conn_sem);
+	connection_l = connection_g;  
+	nrk_sem_post(conn_sem);
+	nrk_sem_pend(ack_sem);
+	ack_received_l = ack_received_g;
+	nrk_sem_post(ack_sem);
+
+
+
+	if(ack_received_l == 1 && connection_l == 1)  
+	{
+	
+		while(nrk_uart_data_ready(NRK_DEFAULT_UART)!=0)
+		{
+			// Read Character
+			c=getchar();
+			uart_rx_buf[buf_pos++] = c; 	
+			nrk_led_toggle(GREEN_LED);
+			if(c =='$')
+			{
+				log_g = 1;
+				uart_rx_buf[buf_pos++] = '\0';
+				if(log_g) nrk_kprintf(PSTR("log:From UART\n"));
+				if(log_g) printf("log:%s\n",uart_rx_buf);
+				activate_uart_g = 0;
+				other_active = 1;
+				// tx a packet				
+				bmac_tx_pkt(uart_rx_buf,buf_pos);
+				nrk_sem_pend(ack_sem);
+				ack_received_g = 0; 
+				nrk_sem_post(ack_sem);
+				ack_received_l = 0;
+				pending_retransmit_g = 1;
+			} else if (c == '&') {
+				buf_pos = 0; 		
+			}
+		}
+		log_g = 1;
+	}
+	//sm=nrk_event_wait(SIG(uart_rx_signal));
+	//if(sm != SIG(uart_rx_signal))
+	//	nrk_kprintf( PSTR("RX signal error\n") );
+	nrk_wait_until_next_period();	
+  }
+
+}
+
+void retrans_task() {
+
+  if(log_g) printf ("log:retrans_task PID=%d\r\n", nrk_get_pid ());
+	uint8_t cnt = 0;
+	uint8_t connection_l;
+	uint8_t data_cnt;
+	uint8_t prev_data_seq = 0;  
+//	while (!bmac_started ())
+    nrk_wait_until_next_period ();
+
+	while(1) {
+		nrk_sem_pend(conn_sem);
+		connection_l = connection_g;
+		nrk_sem_post(conn_sem);	
+
+		if(pending_retransmit_g == 1)  {
+				if(log_g) printf("log:Re-transmitting packet\r\n");	
+				bmac_tx_pkt(uart_rx_buf, strlen(uart_rx_buf));
+				retransmit_count_g++;
+				if(retransmit_count_g==5)
+				terminate_connection();
+			} else {
+				// this checks if there is a connection and one is receivng data then 
+				// if the sender shuts down then the connection is terminated after a while	
+				if(connection_l == 1 && data_index_g < 0) {
+					if(recv_data_seq_g == prev_data_seq) 
+							data_cnt++;
+					if(recv_data_seq_g > prev_data_seq)
+					{
+							data_cnt = 0; 	
+							prev_data_seq = recv_data_seq_g;
+					}
+					if(data_cnt > 5) {
+						if(log_g)nrk_kprintf(PSTR("log:Recv cn term\n"));
+						terminate_connection();
+						data_cnt = 0; 
+					}
+				}
+
+				cnt++;
+				//if(log_g) printf("log:ver activ con:%d cnt:%d\n",connection_l,cnt);
+				if(cnt>0 && connection_l == 0) {
+				cnt = 0;
+				vertsk_active_g = 1; 
+				}
+			}
+
+		nrk_wait_until_next_period();
+
+	}
+}
+
+void rx_task ()
+{
+	uint8_t pos,len,i,version;
+	int8_t rssi;
+  uint8_t *local_rx_buf;
+  int16_t recipient,sender,dataseq;
+	char type;
+  if(log_g) printf ("log:rx_task PID=%d\r\n", nrk_get_pid ());
+  // init bmac on channel 15 
+  bmac_init (15);
+
+  bmac_rx_pkt_set_buffer (rx_buf, RF_MAX_PAYLOAD_SIZE);
+
+  while (1) {
+    // Wait until an RX packet is received
+    bmac_wait_until_rx_pkt ();
+    // Get the RX packet 
+    nrk_led_set (ORANGE_LED);
+    local_rx_buf = bmac_rx_pkt_get (&len, &rssi);
+    //if(log_g) printf ("log:Packet recv\n");
+    //if(log_g) printf ("log:");
+    //for (i = 0; i < len; i++) {
+    //  if(log_g) printf ("%c", rx_buf[i]);
+		//}
+    //if(log_g) printf ("\n");
+
+		pos = 0; 
+		recipient = get_next_int(local_rx_buf,&pos,len); 
+		pos+=1;
+		sender = get_next_int(local_rx_buf,&pos,len);
+		pos+=1; 
+		type = local_rx_buf[pos];
+		pos+=2;
+
+		if((recipient != 0 && recipient != MAC_ADDR) || sender == MAC_ADDR) {
+
+			if(log_g) printf("log:Ignore\r\n");
+
+		} else if(recipient == 0 && type == 'S') {
+
+			version =get_next_int(local_rx_buf,&pos,len);
+			on_discover_pkt(sender, version);
+ 
+		} else if (recipient == 0 && type == 'B') {
+
+			onBasketBallPkt();
+		
+		}	else if (type == 'C') {
+
+			version =get_next_int(local_rx_buf,&pos,len);
+			onConnectionReq(sender,version);
+
+		} else if(type == 'D' ) {
+
+			dataseq = get_next_int(local_rx_buf,&pos,len);	
+			onData(sender,dataseq,local_rx_buf,len);
+
+		}	else if(type == 'A') {
+
+			dataseq = get_next_int(local_rx_buf,&pos,len);	
+			onAck(sender, dataseq);
+
+		} else if(type == 'M') {
+			onContactShare(local_rx_buf,len); 
+		}else {
+
+			if(log_g) printf("log:Invalid MSG\r\n");
+
+		}
+    
+		// Release the RX buffer so future packets can arrive 
+    memset(local_rx_buf,0,len+1);
+    bmac_rx_pkt_release ();
+  	nrk_led_clr(ORANGE_LED);
+		nrk_wait_until_next_period();
+	}
+}
+
+void discover_task()
+{
+	uint8_t len;
+	uint8_t connection_l;
+	while (!bmac_started ())
+    nrk_wait_until_next_period ();		
+
+	if(log_g) printf("log:discover_task PID=%d\r\n",nrk_get_pid());
+
+
+	while(1) {
+			nrk_sem_pend(conn_sem);
+			connection_l = connection_g;
+			nrk_sem_post(conn_sem);
+			
+
+			if(connection_l == 0 && vertsk_active_g == 0 && version_g[MAC_ADDR] > 0) {
+				nrk_led_toggle(BLUE_LED);	
+				if(log_g) printf("log:Sending discover pkt\r\n");
+				nrk_sem_pend(tx_sem);
+				sprintf(tx_buf,"0:%d:S:%d",MAC_ADDR,version_g[MAC_ADDR]);
+				bmac_tx_pkt(tx_buf, strlen(tx_buf));
+				nrk_sem_post(tx_sem);
+				memset(tx_buf,0,strlen(tx_buf));
+			}
+    	nrk_wait_until_next_period ();
+	
+	}
+
+}
+
+void act_recog ()
+{
+uint16_t cnt;
+int8_t i,fd,val, flag, sit_count, stand_still, walk_p_count, walk_n_count, run_p_count, run_n_count;
+uint16_t buf;
+uint64_t bbuf;
+int16_t y_axis[100];
+i = 0;
+
+  printf( "log:act_recog PID=%d\r\n",nrk_get_pid());
+  // Open ADC device as read 
+  fd=nrk_open(FIREFLY_3_SENSOR_BASIC,READ);
+  if(fd==NRK_ERROR) nrk_kprintf(PSTR("Failed to open sensor driver\r\n"));
+  
+  flag = 0;
+  cnt=0;
+  sit_count = 0;
+  stand_still = 0;
+  walk_p_count = 0;
+  run_p_count = 0;
+  walk_n_count = 0;
+  run_n_count = 0;
+  while(1) {
+
+	// Example of setting a sensor
+	val=nrk_set_status(fd,SENSOR_SELECT,ACC_Y);
+	val=nrk_read(fd,&buf,2);
+	y_axis[i] = buf - 430;
+	if (y_axis[i] <= 40 && y_axis[i] > -20)
+		stand_still++;
+	if (y_axis[i] <= 90 && y_axis[i] > 40)
+		sit_count++;
+	else if (y_axis[i] >= 30 && y_axis[i] <= 125)
+		walk_p_count++;
+	else if (y_axis[i] >= 150 && y_axis[i] <= 200)
+		run_p_count++;
+	else if (y_axis[i] >= -250 && y_axis[i] <= -175)
+		walk_n_count++;
+	else if (y_axis[i] >= -350 && y_axis[i] <= -300)
+		run_n_count++; 
+	
+	if (i == 99)
+	{
+		if (sit_count > 75 && stand_still < 45 && walk_p_count < 3 && run_p_count < 3)
+			flag = 1;
+		else if (stand_still >= 45 && walk_p_count < 3 && run_p_count < 3)
+			flag = 2;
+		else if (((walk_p_count + walk_n_count) >= 3) && ((run_p_count + run_n_count) <= 3) && (sit_count < 40))
+			flag = 3;
+		else if ((run_p_count + run_n_count) > 3)
+			flag = 4;
+		if (log_g)
+		{
+			if (flag == 3)
+				printf("ACT:%d:%d\r\n", flag, walk_p_count);
+			else if (flag == 4)
+				printf("ACT:%d:%d\r\n", flag, run_p_count+run_n_count);
+			else
+				printf("ACT:%d\r\n", flag);
+		}
+		flag = 0;
+		sit_count = 0;
+		stand_still = 0;
+		walk_p_count = 0;
+		run_p_count = 0;
+		walk_n_count = 0;
+		run_n_count = 0;
+		i = 0;
+	}
+	
+	i++;
+	//nrk_close(fd);
+	nrk_wait_until_next_period();
+	cnt++;
+	}
+}
+
+void nrk_create_taskset()
+{
+  
+  TaskOne.task = uart_task;
+  nrk_task_set_stk( &TaskOne, Stack1, NRK_APP_STACKSIZE);
+  TaskOne.prio = 3;
+  TaskOne.FirstActivation = TRUE;
+  TaskOne.Type = BASIC_TASK;
+  TaskOne.SchType = PREEMPTIVE;
+  TaskOne.period.secs = 0;
+  TaskOne.period.nano_secs = 400*NANOS_PER_MS;
+  TaskOne.cpu_reserve.secs = 0;
+  TaskOne.cpu_reserve.nano_secs = 60*NANOS_PER_MS;
+  TaskOne.offset.secs = 0;
+  TaskOne.offset.nano_secs= 0;
+  nrk_activate_task (&TaskOne);
+	
+  TaskTwo.task = discover_task;
+  nrk_task_set_stk( &TaskTwo, Stack2, NRK_APP_STACKSIZE);
+  TaskTwo.prio = 2;
+  TaskTwo.FirstActivation = TRUE;
+  TaskTwo.Type = BASIC_TASK;
+  TaskTwo.SchType = PREEMPTIVE;
+  TaskTwo.period.secs = 4;
+  TaskTwo.period.nano_secs = 0*NANOS_PER_MS;
+  TaskTwo.cpu_reserve.secs = 0;
+  TaskTwo.cpu_reserve.nano_secs = 100*NANOS_PER_MS;
+	// this had an offset for mac address
+  TaskTwo.offset.secs = 0;
+  TaskTwo.offset.nano_secs= 0;
+  nrk_activate_task (&TaskTwo);
+
+  TaskThree.task = rx_task;
+  nrk_task_set_stk( &TaskThree, Stack3, NRK_APP_STACKSIZE);
+  TaskThree.prio = 4;
+  TaskThree.FirstActivation = TRUE;
+  TaskThree.Type = BASIC_TASK;
+  TaskThree.SchType = PREEMPTIVE;
+  TaskThree.period.secs = 0;
+  TaskThree.period.nano_secs = 800*NANOS_PER_MS;
+  TaskThree.cpu_reserve.secs = 0;
+  TaskThree.cpu_reserve.nano_secs = 400*NANOS_PER_MS;
+  TaskThree.offset.secs = 0;
+  TaskThree.offset.nano_secs= 0;
+  nrk_activate_task (&TaskThree);
+
+  TaskFour.task = retrans_task;
+  nrk_task_set_stk( &TaskFour, Stack4, NRK_APP_STACKSIZE);
+  TaskFour.prio = 1;
+  TaskFour.FirstActivation = TRUE;
+  TaskFour.Type = BASIC_TASK;
+  TaskFour.SchType = PREEMPTIVE;
+  TaskFour.period.secs = 4;
+  TaskFour.period.nano_secs = 0*NANOS_PER_MS;
+  TaskFour.cpu_reserve.secs = 0;
+  TaskFour.cpu_reserve.nano_secs = 100*NANOS_PER_MS;
+  TaskFour.offset.secs = 0;
+  TaskFour.offset.nano_secs= 0;
+  nrk_activate_task (&TaskFour);
+
+  TaskFive.task = act_recog;
+  nrk_task_set_stk( &TaskFive, Stack5, NRK_APP_STACKSIZE);
+  TaskFive.prio = 1;
+  TaskFive.FirstActivation = TRUE;
+  TaskFive.Type = BASIC_TASK;
+  TaskFive.SchType = PREEMPTIVE;
+  TaskFive.period.secs = 0;
+  TaskFive.period.nano_secs = 100*NANOS_PER_MS;
+  TaskFive.cpu_reserve.secs = 0;
+  TaskFive.cpu_reserve.nano_secs = 8*NANOS_PER_MS;
+  TaskFive.offset.secs = 0;
+  TaskFive.offset.nano_secs= 0;
+  nrk_activate_task (&TaskFive);
+}
+
+void nrk_register_drivers()
+{
+int8_t val;
+val=nrk_register_driver( &dev_manager_ff3_sensors,FIREFLY_3_SENSOR_BASIC);
+if(val==NRK_ERROR) nrk_kprintf( PSTR("Failed to load my ADC driver\r\n") );
+}
+

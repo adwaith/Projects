@@ -1,0 +1,40 @@
+10
+
+dir
+32
+svn://timex.ece.cmu.edu/18748/gr15/src/radio/cc2420/hal
+svn://timex.ece.cmu.edu/18748/gr15
+
+
+
+2014-01-22T23:18:43.599885Z
+1
+root
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+86f4c693-567d-4766-bf69-c7a7acc55564
+
+msp430x1611
+dir
+
+atmega128
+dir
+
+atmega1281
+dir
+
+msp430x149
+dir
+

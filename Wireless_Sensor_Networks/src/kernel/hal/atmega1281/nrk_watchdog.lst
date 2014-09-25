@@ -1,0 +1,244 @@
+   1               		.file	"nrk_watchdog.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  10               		.text
+  11               	.Ltext0:
+ 133               	.global	nrk_watchdog_disable
+ 135               	nrk_watchdog_disable:
+ 136               		.stabd	46,0,0
+   1:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** /******************************************************************************
+   2:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  All rights reserved.
+   5:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *
+   6:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *
+  10:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *
+  14:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  GNU General Public License for more details.
+  18:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *
+  19:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *
+  22:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *  Anthony Rowe
+  24:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** *******************************************************************************/
+  25:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** 
+  26:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** #include <include.h>
+  27:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** #include <nrk_watchdog.h>
+  28:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** #include <nrk_error.h>
+  29:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** #include <nrk.h>
+  30:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** #include <avr/wdt.h>
+  31:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** 
+  32:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** void nrk_watchdog_disable()
+  33:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** {
+ 138               	.LM0:
+ 139               	.LFBB1:
+ 140               	/* prologue: function */
+ 141               	/* frame size = 0 */
+ 142               	/* stack size = 0 */
+ 143               	.L__stack_usage = 0
+  34:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** nrk_int_disable();
+ 145               	.LM1:
+ 146 0000 0E94 0000 		call nrk_int_disable
+ 147               	.LBB6:
+ 148               	.LBB7:
+  35:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** nrk_watchdog_reset();
+  36:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** MCUSR &= ~(1<<WDRF);
+  37:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** WDTCSR |= (1<<WDCE) | (1<<WDE);
+  38:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** WDTCSR = 0;
+  39:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** nrk_int_enable();
+  40:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** }
+  41:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** 
+  42:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** void nrk_watchdog_enable()
+  43:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** {
+  44:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** // Enable watchdog with 1024K cycle timeout
+  45:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** // No Interrupt Trigger
+  46:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** nrk_int_disable();
+  47:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** MCUSR &= ~(1<<WDRF);
+  48:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** nrk_watchdog_reset();
+  49:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** WDTCSR |= (1<<WDCE) | (1<<WDE);
+  50:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** WDTCSR = (1<<WDE) | (1<<WDP2) | (1<<WDP0);
+  51:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** nrk_int_enable();
+  52:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** 
+  53:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** }
+  54:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** 
+  55:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** int8_t nrk_watchdog_check()
+  56:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** {
+  57:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** 
+  58:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** if((MCUSR & (1<<WDRF))==0) return NRK_OK;
+  59:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** return NRK_ERROR;
+  60:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** }
+  61:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** 
+  62:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** inline void nrk_watchdog_reset()
+  63:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** {
+  64:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** wdt_reset();
+ 150               	.LM2:
+ 151               	/* #APP */
+ 152               	 ;  64 "../../../src/kernel/hal/atmega1281/nrk_watchdog.c" 1
+ 153 0004 A895      		wdr
+ 154               	 ;  0 "" 2
+ 155               	/* #NOAPP */
+ 156               	.LBE7:
+ 157               	.LBE6:
+  36:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** MCUSR &= ~(1<<WDRF);
+ 159               	.LM3:
+ 160 0006 84B7      		in r24,84-32
+ 161 0008 877F      		andi r24,lo8(-9)
+ 162 000a 84BF      		out 84-32,r24
+  37:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** WDTCSR |= (1<<WDCE) | (1<<WDE);
+ 164               	.LM4:
+ 165 000c E0E6      		ldi r30,lo8(96)
+ 166 000e F0E0      		ldi r31,hi8(96)
+ 167 0010 8081      		ld r24,Z
+ 168 0012 8861      		ori r24,lo8(24)
+ 169 0014 8083      		st Z,r24
+  38:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** WDTCSR = 0;
+ 171               	.LM5:
+ 172 0016 1082      		st Z,__zero_reg__
+  39:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** nrk_int_enable();
+ 174               	.LM6:
+ 175 0018 0E94 0000 		call nrk_int_enable
+ 176               	/* epilogue start */
+  40:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** }
+ 178               	.LM7:
+ 179 001c 0895      		ret
+ 181               	.Lscope1:
+ 183               		.stabd	78,0,0
+ 185               	.global	nrk_watchdog_enable
+ 187               	nrk_watchdog_enable:
+ 188               		.stabd	46,0,0
+  43:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** {
+ 190               	.LM8:
+ 191               	.LFBB2:
+ 192               	/* prologue: function */
+ 193               	/* frame size = 0 */
+ 194               	/* stack size = 0 */
+ 195               	.L__stack_usage = 0
+  46:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** nrk_int_disable();
+ 197               	.LM9:
+ 198 001e 0E94 0000 		call nrk_int_disable
+  47:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** MCUSR &= ~(1<<WDRF);
+ 200               	.LM10:
+ 201 0022 84B7      		in r24,84-32
+ 202 0024 877F      		andi r24,lo8(-9)
+ 203 0026 84BF      		out 84-32,r24
+ 204               	.LBB8:
+ 205               	.LBB9:
+ 207               	.LM11:
+ 208               	/* #APP */
+ 209               	 ;  64 "../../../src/kernel/hal/atmega1281/nrk_watchdog.c" 1
+ 210 0028 A895      		wdr
+ 211               	 ;  0 "" 2
+ 212               	/* #NOAPP */
+ 213               	.LBE9:
+ 214               	.LBE8:
+  49:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** WDTCSR |= (1<<WDCE) | (1<<WDE);
+ 216               	.LM12:
+ 217 002a E0E6      		ldi r30,lo8(96)
+ 218 002c F0E0      		ldi r31,hi8(96)
+ 219 002e 8081      		ld r24,Z
+ 220 0030 8861      		ori r24,lo8(24)
+ 221 0032 8083      		st Z,r24
+  50:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** WDTCSR = (1<<WDE) | (1<<WDP2) | (1<<WDP0);
+ 223               	.LM13:
+ 224 0034 8DE0      		ldi r24,lo8(13)
+ 225 0036 8083      		st Z,r24
+  51:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** nrk_int_enable();
+ 227               	.LM14:
+ 228 0038 0E94 0000 		call nrk_int_enable
+ 229               	/* epilogue start */
+  53:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** }
+ 231               	.LM15:
+ 232 003c 0895      		ret
+ 234               	.Lscope2:
+ 236               		.stabd	78,0,0
+ 238               	.global	nrk_watchdog_check
+ 240               	nrk_watchdog_check:
+ 241               		.stabd	46,0,0
+  56:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** {
+ 243               	.LM16:
+ 244               	.LFBB3:
+ 245               	/* prologue: function */
+ 246               	/* frame size = 0 */
+ 247               	/* stack size = 0 */
+ 248               	.L__stack_usage = 0
+  58:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** if((MCUSR & (1<<WDRF))==0) return NRK_OK;
+ 250               	.LM17:
+ 251 003e 04B6      		in __tmp_reg__,84-32
+ 252 0040 03FC      		sbrc __tmp_reg__,3
+ 253 0042 00C0      		rjmp .L5
+ 254 0044 81E0      		ldi r24,lo8(1)
+ 255 0046 0895      		ret
+ 256               	.L5:
+  59:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** return NRK_ERROR;
+ 258               	.LM18:
+ 259 0048 8FEF      		ldi r24,lo8(-1)
+  60:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** }
+ 261               	.LM19:
+ 262 004a 0895      		ret
+ 264               	.Lscope3:
+ 266               		.stabd	78,0,0
+ 268               	.global	nrk_watchdog_reset
+ 270               	nrk_watchdog_reset:
+ 271               		.stabd	46,0,0
+  63:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** {
+ 273               	.LM20:
+ 274               	.LFBB4:
+ 275               	/* prologue: function */
+ 276               	/* frame size = 0 */
+ 277               	/* stack size = 0 */
+ 278               	.L__stack_usage = 0
+ 280               	.LM21:
+ 281               	/* #APP */
+ 282               	 ;  64 "../../../src/kernel/hal/atmega1281/nrk_watchdog.c" 1
+ 283 004c A895      		wdr
+ 284               	 ;  0 "" 2
+ 285               	/* epilogue start */
+  65:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** 
+  66:../../../src/kernel/hal/atmega1281/nrk_watchdog.c **** }
+ 287               	.LM22:
+ 288               	/* #NOAPP */
+ 289 004e 0895      		ret
+ 291               	.Lscope4:
+ 293               		.stabd	78,0,0
+ 294               		.comm _nrk_signal_list,4,1
+ 295               		.comm error_task,1,1
+ 296               		.comm error_num,1,1
+ 297               		.comm nrk_idle_task_stk,128,1
+ 298               		.comm nrk_kernel_stk_ptr,2,1
+ 305               	.Letext0:
+ 306               	.global __do_clear_bss
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 nrk_watchdog.c
+     /tmp/ccII0swp.s:2      *ABS*:000000000000003f __SREG__
+     /tmp/ccII0swp.s:3      *ABS*:000000000000003e __SP_H__
+     /tmp/ccII0swp.s:4      *ABS*:000000000000003d __SP_L__
+     /tmp/ccII0swp.s:5      *ABS*:0000000000000034 __CCP__
+     /tmp/ccII0swp.s:6      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccII0swp.s:7      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccII0swp.s:135    .text:0000000000000000 nrk_watchdog_disable
+     /tmp/ccII0swp.s:187    .text:000000000000001e nrk_watchdog_enable
+     /tmp/ccII0swp.s:240    .text:000000000000003e nrk_watchdog_check
+     /tmp/ccII0swp.s:270    .text:000000000000004c nrk_watchdog_reset
+                            *COM*:0000000000000004 _nrk_signal_list
+                            *COM*:0000000000000001 error_task
+                            *COM*:0000000000000001 error_num
+                            *COM*:0000000000000080 nrk_idle_task_stk
+                            *COM*:0000000000000002 nrk_kernel_stk_ptr
+
+UNDEFINED SYMBOLS
+nrk_int_disable
+nrk_int_enable
+__do_clear_bss
