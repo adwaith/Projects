@@ -1,0 +1,10 @@
+2014-03-30 19:59:51,287 DEBUG S3 Server: LIST Server
+2014-03-30 19:59:51,291 DEBUG S3 Server: CREATE Bucket test
+2014-03-30 19:59:51,326 DEBUG S3 Server: LIST Server
+2014-03-30 19:59:51,327 DEBUG S3 Server: PUT Object test/helloworld
+2014-03-30 19:59:51,327 DEBUG S3 Server: LIST Bucket test
+2014-03-30 19:59:51,328 DEBUG S3 Server: GET Object test/helloworld
+2014-03-30 19:59:51,329 DEBUG S3 Server: DELETE Object test/helloworld
+2014-03-30 19:59:51,329 DEBUG S3 Server: LIST Bucket test
+2014-03-30 19:59:51,330 DEBUG S3 Server: DELETE Bucket test
+2014-03-30 19:59:51,331 DEBUG S3 Server: LIST Server
