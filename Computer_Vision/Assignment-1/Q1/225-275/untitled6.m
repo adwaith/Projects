@@ -1,0 +1,15 @@
+a=imread('0004.jpg');
+b=rgb2gray(a);
+c=edge(b,'canny');
+d=edge(b,'log');
+e=edge(b,'prewitt');
+f=edge(b,'roberts');
+g=edge(b,'sobel');
+h=edge(b,'zerocross');
+ci=imcomplement(c);
+di=imcomplement(d);
+ei=imcomplement(e);
+fi=imcomplement(f);
+gi=imcomplement(g);
+hi=imcomplement(h);
+imshow(b);
